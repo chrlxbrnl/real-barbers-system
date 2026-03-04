@@ -1,5 +1,6 @@
 import hero1 from "../assets/images/hero-1.png";
 import logo from "../assets/images/logo.png";
+import faceShapes from "../assets/images/Face Shapes/Face_Shapes.png";
 
 export default function Home() {
   return (
@@ -57,7 +58,30 @@ export default function Home() {
           </div>
         </section>
 
-        <section className="min-h-screen"></section>
+        <section className="min-h-screen px-6 py-16 md:px-16 flex flex-col md:flex-row items-center">
+          {/* Text Content */}
+          <div className="flex-1 text-center md:text-left">
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-semibold mb-6">
+              Choose Your Face Shape, <br className="hidden sm:block" />
+              Get Your Best Style
+            </h2>
+
+            <p className="max-w-md mx-auto md:mx-0 text-lg text-gray-600">
+              Our system helps you find the most suitable haircut based on your
+              face shape. Just pick your face type and discover hairstyles that
+              will make you look sharper and more confident.
+            </p>
+          </div>
+
+          {/* Image */}
+          <div className="flex-1 flex justify-center shrink-0">
+            <img
+              src={faceShapes}
+              alt="Face Shapes"
+              className="w-64 h-auto object-contain sm:w-80"
+            />
+          </div>
+        </section>
       </main>
     </>
   );
