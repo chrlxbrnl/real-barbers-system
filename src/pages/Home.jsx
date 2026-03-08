@@ -1,23 +1,18 @@
+import { useNavigate } from "react-router-dom";
 import hero1 from "../assets/images/hero-1.png";
-import logo from "../assets/images/logo.png";
 import faceShapes from "../assets/images/Face Shapes/Face_Shapes.png";
 import scissors from "../assets/images/scissors.png";
+import logo from "../assets/images/logo.png";
+import Logo from "../components/Logo";
 
 export default function Home() {
+  const navigate = useNavigate();
+
   return (
     <>
       {/* Header */}
       <header className="absolute top-0 left-0 w-full z-20 px-6 md:px-12 py-5 flex items-center justify-center md:justify-start text-white">
-        <div className="flex items-center gap-3">
-          <img
-            className="w-10 md:w-12 h-auto"
-            src={logo}
-            alt="Real Barbers Logo"
-          />
-          <h1 className="font-extrabold uppercase text-xl md:text-2xl tracking-wide">
-            Real Barbers
-          </h1>
-        </div>
+        <Logo />
 
         {/* <a
           href="#"
@@ -50,12 +45,12 @@ export default function Home() {
             </h2>
 
             {/* CTA Button (Mobile + Desktop) */}
-            <a
-              href="#"
-              className="inline-block bg-white text-black px-8 py-3 rounded-full font-semibold text-lg hover:scale-105 hover:bg-gray-200 transition duration-300"
+            <button
+              onClick={() => navigate("/appointment")}
+              className="inline-block cursor-pointer bg-white text-black px-8 py-3 rounded-full font-semibold text-lg hover:scale-105 hover:bg-gray-200 transition duration-300"
             >
               Book Appointment
-            </a>
+            </button>
           </div>
         </section>
 
