@@ -152,9 +152,6 @@ export default function BookingPage() {
 
     try {
       await cancelQrPayment(appointmentId, "expired");
-    } catch (error) {
-      console.error("Failed to expire appointment reservation:", error);
-    } finally {
       setShowPaymentModal(false);
       setQrImage(null);
       setAppointmentId(null);
@@ -164,6 +161,11 @@ export default function BookingPage() {
       setReservationExpiresAt(null);
       setReservationSecondsRemaining(null);
       setSlotReleaseNotice("Slot released due to inactivity");
+    } catch (error) {
+      console.error("Failed to expire appointment reservation:", error);
+      if (error.message.includes("has not expired yet")) {
+        setReservationSecondsRemaining(1);
+      }
     }
   }, [appointmentId]);
 
@@ -470,6 +472,7 @@ export default function BookingPage() {
                 </p>
 
                 <button
+                  disabled={loadingPayment}
                   onClick={async () => {
                     try {
                       setLoadingPayment(true);

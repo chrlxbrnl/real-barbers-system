@@ -146,8 +146,10 @@ export function isActiveSlotReservation(record = {}, now = new Date()) {
     status === "cancelled" ||
     status === "canceled" ||
     status === "payment_failed" ||
+    status === "available" ||
     slotStatus === "expired" ||
-    slotStatus === "released"
+    slotStatus === "released" ||
+    slotStatus === "available"
   ) {
     return false;
   }

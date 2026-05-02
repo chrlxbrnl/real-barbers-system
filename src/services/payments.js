@@ -58,11 +58,19 @@ export async function requestQrPayment(payload) {
 export async function cancelQrPayment(appointmentId, reason) {
   const body = reason ? { appointmentId, reason } : { appointmentId };
 
-  await fetchWithTimeout("/cancel-appointment", {
+  const res = await fetchWithTimeout("/cancel-appointment", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
     body: JSON.stringify(body),
   });
+
+  const data = await res.json().catch(() => ({}));
+
+  if (!res.ok) {
+    throw new Error(getPaymentErrorMessage(data));
+  }
+
+  return data;
 }

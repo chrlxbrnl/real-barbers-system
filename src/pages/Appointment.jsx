@@ -3,22 +3,29 @@ import {
   collection,
   query,
   where,
-  getDocs,
   onSnapshot,
   doc,
   updateDoc,
-  deleteDoc,
 } from "firebase/firestore";
-import { Calendar, CheckCircle, Clock, CreditCard, FileText, RotateCcw, Star } from "lucide-react";
+import {
+  Calendar,
+  CheckCircle,
+  Clock,
+  CreditCard,
+  FileText,
+  RotateCcw,
+  Star,
+  Trash2,
+} from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { db } from "../firebase/firebase";
 import { useAuth } from "../context/AuthContext";
 import NavBar from "../components/NavBar";
 import AuthGate from "../components/auth/AuthGate";
-import { requestQrPayment } from "../services/payments";
+import { cancelQrPayment, requestQrPayment } from "../services/payments";
 import {
   cancelAppointment,
-  expireAppointmentReservation,
+  deleteAppointment,
   formatReservationCountdown,
   getFallbackReservationExpiresAt,
   getAppointmentDateTime,
@@ -34,7 +41,11 @@ import {
 const historyFilters = ["all", "completed", "cancelled", "no-show"];
 
 const normalizeStatus = (status) =>
-  status?.toString().trim().toLowerCase().replace(/[\s-]+/g, "_");
+  status
+    ?.toString()
+    .trim()
+    .toLowerCase()
+    .replace(/[\s-]+/g, "_");
 
 function isHistoryAppointment(appointment) {
   const status = normalizeStatus(appointment.resolvedStatus);
@@ -47,7 +58,10 @@ function isHistoryAppointment(appointment) {
 }
 
 function hasPassed(appointment) {
-  const appointmentDateTime = getAppointmentDateTime(appointment.date, appointment.time);
+  const appointmentDateTime = getAppointmentDateTime(
+    appointment.date,
+    appointment.time,
+  );
   return appointmentDateTime ? appointmentDateTime < new Date() : false;
 }
 
@@ -124,37 +138,6 @@ function isSameBookingSlot(a, b) {
   );
 }
 
-function isSlotAlreadyReservedError(errorMessage = "") {
-  const message = errorMessage.toLowerCase();
-  return message.includes("reserved") || message.includes("already booked");
-}
-
-async function deleteStalePendingReservation(appointment) {
-  const staleReservationsQuery = query(
-    collection(db, "appointments"),
-    where("userId", "==", appointment.userId),
-    where("date", "==", appointment.date),
-    where("time", "==", appointment.time),
-  );
-
-  const snapshot = await getDocs(staleReservationsQuery);
-  const deletes = snapshot.docs
-    .filter((docSnapshot) => {
-      const data = docSnapshot.data();
-      const status = normalizeStatus(data.status);
-      const paymentStatus = normalizeStatus(data.paymentStatus);
-
-      return (
-        paymentStatus !== "paid" &&
-        status !== "confirmed" &&
-        status !== "completed"
-      );
-    })
-    .map((docSnapshot) => deleteDoc(docSnapshot.ref));
-
-  await Promise.all(deletes);
-}
-
 export default function Appointment() {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -216,42 +199,42 @@ export default function Appointment() {
     const appointmentId = paymentModalWatchAppointmentId;
     if (!appointmentId) return;
 
-    const unsubscribe = onSnapshot(doc(db, "appointments", appointmentId), (snapshot) => {
-      if (!snapshot.exists()) return;
+    const unsubscribe = onSnapshot(
+      doc(db, "appointments", appointmentId),
+      (snapshot) => {
+        if (!snapshot.exists()) return;
 
-      const data = snapshot.data();
+        const data = snapshot.data();
 
-      if (data.paymentStatus === "paid" || data.status === "confirmed") {
-        setPaymentModal((current) => {
-          if (!current) return current;
+        if (data.paymentStatus === "paid" || data.status === "confirmed") {
+          setPaymentModal((current) => {
+            if (!current) return current;
 
-          return {
-            ...current,
-            success: true,
-            loading: false,
-            reservationSecondsRemaining: null,
-            confirmedBooking: {
-              date: data.date,
-              time: data.time,
-              amountPaid: data.amountPaid || data.amount || 150,
-              paymentReferenceId:
-                getPaymentReferenceId(data) ||
-                current.paymentReferenceId ||
-                current.watchAppointmentId,
-            },
-          };
-        });
-      }
-    });
+            return {
+              ...current,
+              success: true,
+              loading: false,
+              reservationSecondsRemaining: null,
+              confirmedBooking: {
+                date: data.date,
+                time: data.time,
+                amountPaid: data.amountPaid || data.amount || 150,
+                paymentReferenceId:
+                  getPaymentReferenceId(data) ||
+                  current.paymentReferenceId ||
+                  current.watchAppointmentId,
+              },
+            };
+          });
+        }
+      },
+    );
 
     return () => unsubscribe();
   }, [paymentModalWatchAppointmentId]);
 
   useEffect(() => {
-    if (
-      !paymentModalReservationExpiresAt ||
-      paymentModalSuccess
-    ) {
+    if (!paymentModalReservationExpiresAt || paymentModalSuccess) {
       return;
     }
 
@@ -271,14 +254,29 @@ export default function Appointment() {
       );
 
       if (seconds === 0 && paymentModalWatchAppointmentId) {
-        expireAppointmentReservation(paymentModalWatchAppointmentId)
-          .catch((error) => {
-            console.error("Failed to expire appointment reservation:", error);
-          })
-          .finally(() => {
+        (async () => {
+          try {
+            await cancelQrPayment(paymentModalWatchAppointmentId, "expired");
             setPaymentModal(null);
             setPaymentNotice("Slot released due to inactivity");
-          });
+          } catch (error) {
+            console.error("Failed to expire appointment reservation:", error);
+            if (error.message.includes("has not expired yet")) {
+              setPaymentModal((current) =>
+                current
+                  ? {
+                      ...current,
+                      reservationSecondsRemaining: 1,
+                    }
+                  : current,
+              );
+              return;
+            }
+
+            setPaymentModal(null);
+            setPaymentNotice("Slot released due to inactivity");
+          }
+        })();
       }
     };
 
@@ -297,7 +295,10 @@ export default function Appointment() {
       .filter(isHistoryAppointment)
       .filter((appointment) => {
         if (historyFilter === "all") return true;
-        return normalizeStatus(appointment.resolvedStatus) === normalizeStatus(historyFilter);
+        return (
+          normalizeStatus(appointment.resolvedStatus) ===
+          normalizeStatus(historyFilter)
+        );
       })
       .sort((a, b) => sortByDateTime(b, a));
 
@@ -340,6 +341,41 @@ export default function Appointment() {
     }
   };
 
+  const handleDeleteHistory = async (id) => {
+    const confirmDelete = window.confirm(
+      "Are you sure you want to delete this appointment from your history?",
+    );
+
+    if (!confirmDelete) return;
+
+    try {
+      await deleteAppointment(id);
+      if (selectedAppointment?.id === id) {
+        setSelectedAppointment(null);
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Failed to delete appointment");
+    }
+  };
+
+  const closePaymentModal = async () => {
+    const appointmentId = paymentModal?.watchAppointmentId;
+
+    if (!appointmentId || paymentModal?.success) {
+      setPaymentModal(null);
+      return;
+    }
+
+    try {
+      await cancelQrPayment(appointmentId);
+    } catch (error) {
+      console.error("Failed to cancel appointment reservation:", error);
+    } finally {
+      setPaymentModal(null);
+    }
+  };
+
   const openDetails = (appointment) => {
     setSelectedAppointment(appointment);
     setReviewForm({
@@ -373,28 +409,7 @@ export default function Appointment() {
         time: appointment.time,
       };
 
-      let data;
-
-      try {
-        data = await requestQrPayment(paymentPayload);
-      } catch (error) {
-        if (!isSlotAlreadyReservedError(error.message)) {
-          throw error;
-        }
-
-        await deleteStalePendingReservation({
-          ...appointment,
-          userId: appointment.userId || user.uid,
-        });
-
-        data = await requestQrPayment({
-          userId: paymentPayload.userId,
-          fullName: paymentPayload.fullName,
-          email: paymentPayload.email,
-          date: paymentPayload.date,
-          time: paymentPayload.time,
-        });
-      }
+      const data = await requestQrPayment(paymentPayload);
 
       setPaymentModal((current) => ({
         ...current,
@@ -487,7 +502,9 @@ export default function Appointment() {
       <main className="max-w-5xl mx-auto px-4 sm:px-6 py-6">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between mb-6">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">My Appointments</h1>
+            <h1 className="text-2xl font-bold text-gray-900">
+              My Appointments
+            </h1>
             <p className="text-sm text-gray-600">
               Track upcoming bookings, receipts, and past visits.
             </p>
@@ -627,13 +644,15 @@ export default function Appointment() {
                         </button>
                       </>
                     ) : (
-                      <button
-                        onClick={() => navigate("/book")}
-                        className="inline-flex items-center gap-2 rounded-md border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 transition hover:border-black hover:text-black"
-                      >
-                        <RotateCcw className="h-4 w-4" />
-                        Rebook
-                      </button>
+                      <>
+                        <button
+                          onClick={() => navigate("/book")}
+                          className="inline-flex items-center gap-2 rounded-md border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 transition hover:border-black hover:text-black"
+                        >
+                          <RotateCcw className="h-4 w-4" />
+                          Rebook
+                        </button>
+                      </>
                     )}
                     <button
                       onClick={() => openDetails(appt)}
@@ -641,6 +660,13 @@ export default function Appointment() {
                     >
                       <FileText className="h-4 w-4" />
                       Details
+                    </button>
+                    <button
+                      onClick={() => handleDeleteHistory(appt.id)}
+                      className="inline-flex items-center gap-2 rounded-md border border-red-500 px-3 py-2 text-sm font-medium text-red-600 transition hover:bg-red-500 hover:text-white"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                      Delete
                     </button>
                   </div>
                 </div>
@@ -687,7 +713,10 @@ export default function Appointment() {
               <div className="flex items-center justify-between">
                 <span className="text-gray-500">Amount</span>
                 <span className="font-medium">
-                  PHP {selectedAppointment.amountPaid || selectedAppointment.amount || 150}
+                  PHP{" "}
+                  {selectedAppointment.amountPaid ||
+                    selectedAppointment.amount ||
+                    150}
                 </span>
               </div>
               <div className="flex items-start justify-between gap-4">
@@ -699,7 +728,8 @@ export default function Appointment() {
               </div>
             </div>
 
-            {normalizeStatus(selectedAppointment.resolvedStatus) === "completed" && (
+            {normalizeStatus(selectedAppointment.resolvedStatus) ===
+              "completed" && (
               <div className="mt-5 border-t border-gray-200 pt-5">
                 <h3 className="mb-3 text-sm font-semibold text-gray-900">
                   Rate your visit
@@ -708,7 +738,9 @@ export default function Appointment() {
                   {[1, 2, 3, 4, 5].map((rating) => (
                     <button
                       key={rating}
-                      onClick={() => setReviewForm((form) => ({ ...form, rating }))}
+                      onClick={() =>
+                        setReviewForm((form) => ({ ...form, rating }))
+                      }
                       className="p-1 text-gray-300 hover:text-black"
                       aria-label={`${rating} star rating`}
                     >
@@ -750,7 +782,7 @@ export default function Appointment() {
           <div className="relative w-full max-w-[92vw] rounded-lg bg-white p-5 text-center shadow-xl sm:max-w-md sm:p-7 md:max-w-lg md:p-8">
             {!paymentModal.success && (
               <button
-                onClick={() => setPaymentModal(null)}
+                onClick={closePaymentModal}
                 className="absolute right-4 top-3 text-xl text-gray-400 hover:text-black"
               >
                 x
@@ -833,7 +865,8 @@ export default function Appointment() {
                   )}
 
                 <div className="mb-4 rounded-lg bg-gray-50 p-3 text-sm text-gray-700">
-                  {paymentModal.appointment.date} at {paymentModal.appointment.time}
+                  {paymentModal.appointment.date} at{" "}
+                  {paymentModal.appointment.time}
                 </div>
 
                 {paymentModal.loading && (
@@ -857,17 +890,17 @@ export default function Appointment() {
                       Waiting for payment confirmation...
                     </p>
                     <p className="mt-1 text-xs text-gray-400">
-                      QR expires in 30 minutes, but this slot is only held
-                      until the countdown ends.
+                      QR expires in 30 minutes, but this slot is only held until
+                      the countdown ends.
                     </p>
                   </>
                 )}
 
                 <button
-                  onClick={() => setPaymentModal(null)}
+                  onClick={closePaymentModal}
                   className="mt-5 w-full rounded-md border border-gray-300 py-2 text-sm font-medium transition hover:bg-black hover:text-white"
                 >
-                  Close
+                  Cancel
                 </button>
               </>
             )}
