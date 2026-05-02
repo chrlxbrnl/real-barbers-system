@@ -1,126 +1,150 @@
-import { useNavigate } from "react-router-dom";
-import hero1 from "../assets/images/hero-1.png";
-import faceShapes from "../assets/images/Face Shapes/Face_Shapes.png";
-import scissors from "../assets/images/scissors.png";
-import logo from "../assets/images/logo.png";
-import Logo from "../components/Logo";
+import { useEffect, useRef } from "react";
+import { useLocation } from "react-router-dom";
+import HeroSection from "../components/home/HeroSection";
+import InfoSection from "../components/home/InfoSection";
+import ShopDetailsCard from "../components/home/ShopDetailsCard";
+import NavBar from "../components/NavBar";
+import { useAuth } from "../context/AuthContext";
+
+function HomeSkeleton() {
+  return (
+    <div className="bg-[#f9f9f9] min-h-screen">
+      <nav className="bg-white border-b border-gray-200 animate-pulse">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
+          <div className="flex items-center justify-between">
+            <div className="h-9 w-36 rounded bg-gray-300"></div>
+            <div className="hidden md:flex gap-6">
+              <div className="h-5 w-12 rounded bg-gray-200"></div>
+              <div className="h-5 w-28 rounded bg-gray-200"></div>
+              <div className="h-5 w-16 rounded bg-gray-200"></div>
+              <div className="h-5 w-16 rounded bg-gray-200"></div>
+            </div>
+            <div className="md:hidden h-7 w-7 rounded bg-gray-200"></div>
+          </div>
+        </div>
+      </nav>
+
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8 animate-pulse">
+          <section className="lg:col-span-2 space-y-6">
+            <div className="h-52 sm:h-64 md:h-72 lg:h-80 rounded-2xl bg-gray-200"></div>
+
+            <div className="-mt-12 sm:-mt-16 md:-mt-20 px-3 sm:px-6 relative z-10">
+              <div className="bg-white rounded-2xl shadow-md p-8 sm:p-10 md:p-14 space-y-10">
+                <div className="space-y-4">
+                  <div className="h-6 w-24 rounded bg-gray-300"></div>
+                  <div className="space-y-3">
+                    <div className="h-4 w-full rounded bg-gray-200"></div>
+                    <div className="h-4 w-11/12 rounded bg-gray-200"></div>
+                    <div className="h-4 w-4/5 rounded bg-gray-200"></div>
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <div className="h-6 w-32 rounded bg-gray-300"></div>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                    {Array.from({ length: 6 }).map((_, index) => (
+                      <div
+                        key={index}
+                        className="h-32 sm:h-40 rounded bg-gray-200"
+                      ></div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <div className="h-6 w-28 rounded bg-gray-300"></div>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                    {Array.from({ length: 6 }).map((_, index) => (
+                      <div
+                        key={index}
+                        className="aspect-square rounded-xl bg-gray-200"
+                      ></div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <aside className="lg:sticky lg:top-8 self-start space-y-6">
+            <div className="bg-white rounded-3xl shadow-md p-8 text-center">
+              <div className="w-28 h-28 rounded-full bg-gray-200 mx-auto mb-5"></div>
+              <div className="h-6 w-40 rounded bg-gray-300 mx-auto"></div>
+              <div className="h-4 w-32 rounded bg-gray-200 mx-auto mt-3"></div>
+              <div className="h-12 w-36 rounded-full bg-gray-300 mx-auto mt-6"></div>
+              <div className="space-y-2 mt-6">
+                <div className="h-4 w-40 rounded bg-gray-200 mx-auto"></div>
+                <div className="h-3 w-32 rounded bg-gray-200 mx-auto"></div>
+              </div>
+            </div>
+
+            <div className="h-12 w-full rounded-lg bg-gray-300"></div>
+          </aside>
+        </div>
+      </main>
+    </div>
+  );
+}
 
 export default function Home() {
-  const navigate = useNavigate();
+  const recommendationSectionRef = useRef(null);
+  const location = useLocation();
+  const { user } = useAuth();
+
+  useEffect(() => {
+    if (!location.hash) return;
+
+    const sectionId = location.hash.replace("#", "");
+
+    requestAnimationFrame(() => {
+      document.getElementById(sectionId)?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    });
+  }, [location.hash]);
+
+  const handleScrollToRecommendation = () => {
+    recommendationSectionRef.current?.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+    });
+  };
+
+  if (user === undefined) {
+    return <HomeSkeleton />;
+  }
 
   return (
-    <>
-      {/* Header */}
-      <header className="absolute top-0 left-0 w-full z-20 px-6 md:px-12 py-5 flex items-center justify-center md:justify-start text-white">
-        <Logo />
+    <div className="bg-[#f9f9f9] min-h-screen">
+      <NavBar />
 
-        {/* <a
-          href="#"
-          className="hidden md:inline-block bg-white text-black px-6 py-2 rounded-full font-semibold hover:bg-gray-200 transition duration-300"
-        >
-          Book Appointment
-        </a> */}
-      </header>
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
+          {/* Left Content */}
+          <section className="lg:col-span-2 space-y-6">
+            <HeroSection />
 
-      <main>
-        <section
-          className="relative min-h-screen flex items-center justify-center bg-cover bg-center"
-          style={{
-            backgroundImage: `url(${hero1})`,
-            backgroundPosition: "center",
-          }}
-        >
-          {/* Dark Gradient Overlay */}
-          <div className="absolute inset-0 bg-gradient-to-b  from-black/70 via-black/60 to-black/80"></div>
+            {/* Overlapping Card */}
+            <div className="-mt-12 sm:-mt-16 md:-mt-20 px-3 sm:px-6 relative z-10">
+              <InfoSection ref={recommendationSectionRef} />
+            </div>
+          </section>
 
-          {/* Hero Content */}
-          <div className="relative z-10 text-white text-center px-6 max-w-2xl">
-            <p className="text-base sm:text-lg md:text-xl mb-6 text-gray-300 max-w-lg mx-auto">
-              Book appointments with skilled, professional barbers online.
-            </p>
+          {/* Right Content */}
+          <aside className="lg:sticky lg:top-8 self-start">
+            <ShopDetailsCard />
 
-            <h2 className="uppercase font-bold text-3xl sm:text-4xl md:text-5xl lg:text-6xl leading-tight mb-6 sm:mb-8 max-w-xl mx-auto">
-              Where real skill <br className="hidden sm:block" />
-              meets real style
-            </h2>
-
-            {/* CTA Button (Mobile + Desktop) */}
             <button
-              onClick={() => navigate("/appointment")}
-              className="inline-block cursor-pointer bg-white text-black px-8 py-3 rounded-full font-semibold text-lg hover:scale-105 hover:bg-gray-200 transition duration-300"
+              onClick={() => handleScrollToRecommendation()}
+              className="mt-6 w-full bg-black text-white py-3 rounded-lg text-sm font-medium hover:bg-gray-800 transition cursor-pointer"
             >
-              Book Appointment
+              Hairstyle Recommendation
             </button>
-          </div>
-        </section>
-
-        {/* Face Shape Style Section */}
-        <section className="min-h-screen px-6 py-16 md:px-16 flex flex-col md:flex-row items-center gap-6">
-          {/* Text Content */}
-          <div className="flex-1 text-center md:text-left">
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-semibold mb-6 leading-tight">
-              Choose Your Face Shape, <br className="hidden sm:block" />
-              Get Your Best Style
-            </h2>
-
-            <p className="max-w-md mx-auto md:mx-0 text-base sm:text-lg text-gray-600 leading-relaxed">
-              Our system helps you find the most suitable haircut based on your
-              face shape. Just pick your face type and discover hairstyles that
-              will make you look sharper and more confident.
-            </p>
-          </div>
-
-          {/* Image */}
-          <div className="flex-1 flex justify-center shrink-0">
-            <img
-              src={faceShapes}
-              alt="Face Shapes"
-              className="w-64 h-auto object-contain sm:w-80"
-            />
-          </div>
-        </section>
-
-        <section className="relative min-h-screen bg-black overflow-hidden">
-          {/* Decorative Image */}
-          <img
-            src={scissors}
-            alt="Scissors"
-            className="absolute right-0 top-0 h-full object-contain opacity-60"
-          />
-
-          {/* Overlay */}
-          <div className="absolute inset-0 bg-black/70"></div>
-
-          {/* Content Wrapper */}
-          <div className="relative z-10 flex flex-col justify-between min-h-screen px-6 py-16 md:px-16">
-            {/* Main Content */}
-            <div className="max-w-xl text-white text-center md:text-left">
-              <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-semibold mb-6 leading-tight">
-                Explore Our Haircut Styles
-              </h2>
-
-              <p className="text-gray-300 text-base sm:text-lg leading-relaxed max-w-lg">
-                Choose from a variety of haircut styles that match your
-                personality. From classic cuts to modern fades, we offer
-                different options for every customer.
-              </p>
-            </div>
-
-            {/* Footer */}
-            <div className="flex flex-col items-center gap-2 text-white pt-10">
-              <img
-                className="w-10 md:w-12 h-auto"
-                src={logo}
-                alt="Real Barbers Logo"
-              />
-
-              <p className="text-sm text-gray-300 text-center">
-                Maryhomes Molino 4 Bacoor Cavite Near Metro South Barbershop
-              </p>
-            </div>
-          </div>
-        </section>
+          </aside>
+        </div>
       </main>
-    </>
+    </div>
   );
 }
