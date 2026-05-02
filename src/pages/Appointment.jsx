@@ -128,6 +128,17 @@ function canPayAppointment(appointment) {
   );
 }
 
+function hasPendingQrPayment(appointment) {
+  const status = normalizeStatus(appointment.status);
+  const paymentStatus = normalizeStatus(appointment.paymentStatus);
+
+  return (
+    status === "pending_payment" ||
+    status === "reserved" ||
+    paymentStatus === "pending"
+  );
+}
+
 function isSameBookingSlot(a, b) {
   if (!a || !b) return false;
 
@@ -312,7 +323,7 @@ export default function Appointment() {
     };
   }, [appointments, historyFilter]);
 
-  const handleCancel = async (id) => {
+  const handleCancel = async (appointment) => {
     const confirmCancel = window.confirm(
       "Are you sure you want to cancel this appointment?",
     );
@@ -320,7 +331,17 @@ export default function Appointment() {
     if (!confirmCancel) return;
 
     try {
-      await cancelAppointment(id);
+      if (hasPendingQrPayment(appointment)) {
+        await cancelQrPayment(appointment.id);
+
+        if (paymentModal?.watchAppointmentId === appointment.id) {
+          setPaymentModal(null);
+        }
+
+        return;
+      }
+
+      await cancelAppointment(appointment.id);
     } catch (err) {
       console.error(err);
       alert("Failed to cancel appointment");
@@ -637,7 +658,7 @@ export default function Appointment() {
                           </button>
                         )}
                         <button
-                          onClick={() => handleCancel(appt.id)}
+                          onClick={() => handleCancel(appt)}
                           className="rounded-md border border-red-500 px-3 py-2 text-sm font-medium text-red-600 transition hover:bg-red-500 hover:text-white"
                         >
                           Cancel
