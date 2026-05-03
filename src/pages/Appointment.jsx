@@ -16,6 +16,7 @@ import {
   RotateCcw,
   Star,
   Trash2,
+  X,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { db } from "../firebase/firebase";
@@ -26,6 +27,7 @@ import { cancelQrPayment, requestQrPayment } from "../services/payments";
 import {
   cancelAppointment,
   deleteAppointment,
+  expireAppointmentReservation,
   formatReservationCountdown,
   getFallbackReservationExpiresAt,
   getAppointmentDateTime,
@@ -268,6 +270,7 @@ export default function Appointment() {
         (async () => {
           try {
             await cancelQrPayment(paymentModalWatchAppointmentId, "expired");
+            await expireAppointmentReservation(paymentModalWatchAppointmentId);
             setPaymentModal(null);
             setPaymentNotice("Slot released due to inactivity");
           } catch (error) {
@@ -303,6 +306,7 @@ export default function Appointment() {
 
   const { upcomingAppointments, historyAppointments } = useMemo(() => {
     const history = appointments
+      .filter((appointment) => !appointment.hiddenFromUser)
       .filter(isHistoryAppointment)
       .filter((appointment) => {
         if (historyFilter === "all") return true;
@@ -362,7 +366,7 @@ export default function Appointment() {
     }
   };
 
-  const handleDeleteHistory = async (id) => {
+  const handleDeleteHistory = async (appointment) => {
     const confirmDelete = window.confirm(
       "Are you sure you want to delete this appointment from your history?",
     );
@@ -370,8 +374,12 @@ export default function Appointment() {
     if (!confirmDelete) return;
 
     try {
-      await deleteAppointment(id);
-      if (selectedAppointment?.id === id) {
+      await updateDoc(doc(db, "appointments", appointment.id), {
+        hiddenFromUser: true,
+        hiddenAt: new Date(),
+      });
+
+      if (selectedAppointment?.id === appointment.id) {
         setSelectedAppointment(null);
       }
     } catch (err) {
@@ -395,6 +403,10 @@ export default function Appointment() {
     } finally {
       setPaymentModal(null);
     }
+  };
+
+  const dismissPaymentModal = () => {
+    setPaymentModal(null);
   };
 
   const openDetails = (appointment) => {
@@ -683,7 +695,7 @@ export default function Appointment() {
                       Details
                     </button>
                     <button
-                      onClick={() => handleDeleteHistory(appt.id)}
+                      onClick={() => handleDeleteHistory(appt)}
                       className="inline-flex items-center gap-2 rounded-md border border-red-500 px-3 py-2 text-sm font-medium text-red-600 transition hover:bg-red-500 hover:text-white"
                     >
                       <Trash2 className="h-4 w-4" />
@@ -803,10 +815,11 @@ export default function Appointment() {
           <div className="relative w-full max-w-[92vw] rounded-lg bg-white p-5 text-center shadow-xl sm:max-w-md sm:p-7 md:max-w-lg md:p-8">
             {!paymentModal.success && (
               <button
-                onClick={closePaymentModal}
-                className="absolute right-4 top-3 text-xl text-gray-400 hover:text-black"
+                onClick={dismissPaymentModal}
+                aria-label="Close payment modal"
+                className="absolute right-4 top-3 text-xl text-gray-400 hover:text-black cursor-pointer"
               >
-                x
+                <X size={18} />
               </button>
             )}
 
