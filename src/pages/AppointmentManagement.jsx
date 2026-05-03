@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   collection,
   query,
@@ -13,7 +13,32 @@ import { isAdmin } from "../utils/isAdmin";
 import NavBar from "../components/NavBar";
 import AuthGate from "../components/auth/AuthGate";
 import { deleteAppointment } from "../services/appointments";
-import { X, Edit, Trash2 } from "lucide-react";
+import { X, Edit, Trash2, Calendar } from "lucide-react";
+
+const dateFormatter = new Intl.DateTimeFormat("en-US", {
+  month: "long",
+  day: "numeric",
+  year: "numeric",
+});
+
+const quickDateFilters = [
+  { value: "today", label: "Today" },
+  { value: "yesterday", label: "Yesterday" },
+  { value: "last_week", label: "Last week" },
+];
+
+const addDays = (date, days) => {
+  const nextDate = new Date(date);
+  nextDate.setDate(nextDate.getDate() + days);
+  return nextDate;
+};
+
+const getDateLabel = (date) => dateFormatter.format(date);
+
+const getDateInputLabel = (dateInput) => {
+  const [year, month, day] = dateInput.split("-").map(Number);
+  return getDateLabel(new Date(year, month - 1, day));
+};
 
 const normalizeStatus = (status) =>
   status?.toString().trim().toLowerCase().replace(/[\s-]+/g, "_");
@@ -39,6 +64,8 @@ const shouldHideAppointment = (appointment) =>
 export default function AppointmentManagement() {
   const { user } = useAuth();
   const [allAppointments, setAllAppointments] = useState([]);
+  const [selectedDate, setSelectedDate] = useState("");
+  const [quickDateFilter, setQuickDateFilter] = useState("");
   const [editingAppointment, setEditingAppointment] = useState(null);
   const [editForm, setEditForm] = useState({ date: "", time: "" });
 
@@ -63,6 +90,45 @@ export default function AppointmentManagement() {
 
     return () => unsubscribe();
   }, [user]);
+
+  const filteredAppointments = useMemo(() => {
+    if (quickDateFilter) {
+      const today = new Date();
+
+      if (quickDateFilter === "today") {
+        const todayLabel = getDateLabel(today);
+        return allAppointments.filter(
+          (appointment) => appointment.date === todayLabel,
+        );
+      }
+
+      if (quickDateFilter === "yesterday") {
+        const yesterdayLabel = getDateLabel(addDays(today, -1));
+        return allAppointments.filter(
+          (appointment) => appointment.date === yesterdayLabel,
+        );
+      }
+
+      if (quickDateFilter === "last_week") {
+        const lastWeekLabels = new Set(
+          Array.from({ length: 7 }, (_, index) =>
+            getDateLabel(addDays(today, -(index + 1))),
+          ),
+        );
+
+        return allAppointments.filter((appointment) =>
+          lastWeekLabels.has(appointment.date),
+        );
+      }
+    }
+
+    if (!selectedDate) return allAppointments;
+
+    const selectedDateLabel = getDateInputLabel(selectedDate);
+    return allAppointments.filter(
+      (appointment) => appointment.date === selectedDateLabel,
+    );
+  }, [allAppointments, selectedDate, quickDateFilter]);
 
   const handleStatusChange = async (appointmentId, newStatus) => {
     try {
@@ -198,6 +264,63 @@ export default function AppointmentManagement() {
           </p>
         </div>
 
+        <div className="mb-6 flex flex-col gap-3 rounded-xl border border-gray-200 bg-white px-6 py-4 shadow-sm sm:flex-row sm:items-end sm:justify-between">
+          <div className="w-full sm:max-w-xs">
+            <label
+              htmlFor="appointment-date-filter"
+              className="mb-1 block text-sm font-medium text-gray-700"
+            >
+              Filter by date
+            </label>
+            <div className="relative">
+              <Calendar className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+              <input
+                id="appointment-date-filter"
+                type="date"
+                value={selectedDate}
+                onChange={(event) => {
+                  setSelectedDate(event.target.value);
+                  setQuickDateFilter("");
+                }}
+                className="w-full rounded-md border border-gray-300 py-2 pl-9 pr-3 text-sm focus:border-black focus:outline-none focus:ring-2 focus:ring-black/10"
+              />
+            </div>
+          </div>
+
+          <div className="flex flex-wrap gap-2">
+            {quickDateFilters.map((filter) => (
+              <button
+                key={filter.value}
+                type="button"
+                onClick={() => {
+                  setQuickDateFilter(filter.value);
+                  setSelectedDate("");
+                }}
+                className={`rounded-md border px-4 py-2 text-sm font-medium transition cursor-pointer ${
+                  quickDateFilter === filter.value
+                    ? "border-black bg-black text-white"
+                    : "border-gray-300 text-gray-700 hover:border-black hover:text-black"
+                }`}
+              >
+                {filter.label}
+              </button>
+            ))}
+          </div>
+
+          {(selectedDate || quickDateFilter) && (
+            <button
+              type="button"
+              onClick={() => {
+                setSelectedDate("");
+                setQuickDateFilter("");
+              }}
+              className="inline-flex items-center justify-center rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition hover:border-black hover:text-black"
+            >
+              Clear filter
+            </button>
+          )}
+        </div>
+
         {/* Edit Modal */}
         {editingAppointment && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -273,9 +396,13 @@ export default function AppointmentManagement() {
           </div>
 
           <div className="overflow-x-auto">
-            {allAppointments.length === 0 ? (
+            {filteredAppointments.length === 0 ? (
               <div className="text-center py-12">
-                <p className="text-gray-500">No appointments found</p>
+                <p className="text-gray-500">
+                  {selectedDate || quickDateFilter
+                    ? "No appointments found for this date filter"
+                    : "No appointments found"}
+                </p>
               </div>
             ) : (
               <table className="min-w-full divide-y divide-gray-200">
@@ -308,7 +435,7 @@ export default function AppointmentManagement() {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {allAppointments.map((appt) => (
+                  {filteredAppointments.map((appt) => (
                     <tr key={appt.id} className="hover:bg-gray-50">
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm font-medium text-gray-900">
