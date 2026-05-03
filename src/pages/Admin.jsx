@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { collection, onSnapshot } from "firebase/firestore";
 import { db } from "../firebase/firebase";
 import { useAuth } from "../context/AuthContext";
@@ -6,7 +6,11 @@ import { isAdmin } from "../utils/isAdmin";
 import NavBar from "../components/NavBar";
 import AuthGate from "../components/auth/AuthGate";
 import { Calendar, Clock, Users, CheckCircle } from "lucide-react";
-import { getAppointmentDateTime } from "../services/appointments";
+import {
+  getAppointmentDateTime,
+  isReservationExpired,
+  syncExpiredReservations,
+} from "../services/appointments";
 
 const normalizeStatus = (status) =>
   status?.toString().trim().toLowerCase().replace(/[\s-]+/g, "_");
@@ -21,13 +25,15 @@ const hiddenPaymentStatuses = new Set([
   "cancelled",
   "canceled_payment",
   "cancelled_payment",
+  "expired",
   "payment_canceled",
   "payment_cancelled",
 ]);
 
-const shouldHideAppointment = (appointment) =>
+const shouldHideAppointment = (appointment, now = new Date()) =>
   hiddenAppointmentStatuses.has(normalizeStatus(appointment.status)) ||
-  hiddenPaymentStatuses.has(normalizeStatus(appointment.paymentStatus));
+  hiddenPaymentStatuses.has(normalizeStatus(appointment.paymentStatus)) ||
+  isReservationExpired(appointment, now);
 
 const isPendingAppointment = (appointment) => {
   const status = normalizeStatus(appointment.status);
@@ -55,9 +61,16 @@ function sortByAppointmentDateTime(a, b) {
 export default function Admin() {
   const { user } = useAuth();
   const [allAppointments, setAllAppointments] = useState([]);
-  const [todaysAppointments, setTodaysAppointments] = useState([]);
-  const [upcomingAppointments, setUpcomingAppointments] = useState([]);
+  const [now, setNow] = useState(() => new Date());
   const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const intervalId = window.setInterval(() => {
+      setNow(new Date());
+    }, 30000);
+
+    return () => window.clearInterval(intervalId);
+  }, []);
 
   useEffect(() => {
     if (!user || !isAdmin(user)) {
@@ -65,49 +78,51 @@ export default function Admin() {
     }
 
     const unsubscribe = onSnapshot(collection(db, "appointments"), (snapshot) => {
-      const data = snapshot.docs
-        .map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-        }))
-        .filter((appointment) => !shouldHideAppointment(appointment))
-        .sort((a, b) => {
-          const aCreatedAt = a.createdAt?.toMillis?.() || 0;
-          const bCreatedAt = b.createdAt?.toMillis?.() || 0;
+      const appointments = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+      syncExpiredReservations(appointments).catch((error) => {
+        console.error("Failed to sync expired reservations:", error);
+      });
 
-          return bCreatedAt - aCreatedAt;
-        });
-
-      setAllAppointments(data);
-
-      // Get today's date in the same format as stored
-      const today = new Date();
-      const monthNames = [
-        "January", "February", "March", "April", "May", "June",
-        "July", "August", "September", "October", "November", "December",
-      ];
-      const todayStr = `${monthNames[today.getMonth()]} ${today.getDate()}, ${today.getFullYear()}`;
-
-      // Filter today's appointments
-      const todays = data.filter(appt => appt.date === todayStr);
-      setTodaysAppointments(todays);
-
-      // Get next 5 upcoming appointments
-      const now = new Date();
-      const futureAppointments = data
-        .filter(appt => {
-          const appointmentDateTime = getAppointmentDateTime(appt.date, appt.time);
-          return appointmentDateTime ? appointmentDateTime >= now : false;
-        })
-        .sort(sortByAppointmentDateTime)
-        .slice(0, 5);
-
-      setUpcomingAppointments(futureAppointments);
+      setAllAppointments(appointments);
       setLoading(false);
     });
 
     return () => unsubscribe();
   }, [user]);
+
+  const visibleAppointments = useMemo(() => {
+    return allAppointments
+      .filter((appointment) => !shouldHideAppointment(appointment, now))
+      .sort((a, b) => {
+        const aCreatedAt = a.createdAt?.toMillis?.() || 0;
+        const bCreatedAt = b.createdAt?.toMillis?.() || 0;
+
+        return bCreatedAt - aCreatedAt;
+      });
+  }, [allAppointments, now]);
+
+  const todaysAppointments = useMemo(() => {
+    const monthNames = [
+      "January", "February", "March", "April", "May", "June",
+      "July", "August", "September", "October", "November", "December",
+    ];
+    const todayStr = `${monthNames[now.getMonth()]} ${now.getDate()}, ${now.getFullYear()}`;
+
+    return visibleAppointments.filter((appt) => appt.date === todayStr);
+  }, [visibleAppointments, now]);
+
+  const upcomingAppointments = useMemo(() => {
+    return visibleAppointments
+      .filter((appt) => {
+        const appointmentDateTime = getAppointmentDateTime(appt.date, appt.time);
+        return appointmentDateTime ? appointmentDateTime >= now : false;
+      })
+      .sort(sortByAppointmentDateTime)
+      .slice(0, 5);
+  }, [visibleAppointments, now]);
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -260,7 +275,7 @@ export default function Admin() {
                   </div>
                   <div className="ml-4">
                     <p className="text-sm font-medium text-gray-600">Total Appointments</p>
-                    <p className="text-2xl font-bold text-gray-900">{allAppointments.length}</p>
+                    <p className="text-2xl font-bold text-gray-900">{visibleAppointments.length}</p>
                   </div>
                 </div>
               </div>
@@ -274,7 +289,7 @@ export default function Admin() {
                   <div className="ml-4">
                     <p className="text-sm font-medium text-gray-600">Confirmed</p>
                     <p className="text-2xl font-bold text-gray-900">
-                      {allAppointments.filter(appt => normalizeStatus(appt.status) === "confirmed").length}
+                      {visibleAppointments.filter(appt => normalizeStatus(appt.status) === "confirmed").length}
                     </p>
                   </div>
                 </div>
@@ -289,7 +304,7 @@ export default function Admin() {
                   <div className="ml-4">
                     <p className="text-sm font-medium text-gray-600">Pending</p>
                     <p className="text-2xl font-bold text-gray-900">
-                      {allAppointments.filter(isPendingAppointment).length}
+                      {visibleAppointments.filter(isPendingAppointment).length}
                     </p>
                   </div>
                 </div>

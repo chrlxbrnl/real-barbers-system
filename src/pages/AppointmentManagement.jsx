@@ -12,7 +12,11 @@ import { useAuth } from "../context/AuthContext";
 import { isAdmin } from "../utils/isAdmin";
 import NavBar from "../components/NavBar";
 import AuthGate from "../components/auth/AuthGate";
-import { deleteAppointment } from "../services/appointments";
+import {
+  deleteAppointment,
+  isReservationExpired,
+  syncExpiredReservations,
+} from "../services/appointments";
 import { X, Edit, Trash2, Calendar } from "lucide-react";
 
 const dateFormatter = new Intl.DateTimeFormat("en-US", {
@@ -53,13 +57,15 @@ const hiddenPaymentStatuses = new Set([
   "cancelled",
   "canceled_payment",
   "cancelled_payment",
+  "expired",
   "payment_canceled",
   "payment_cancelled",
 ]);
 
 const shouldHideAppointment = (appointment) =>
   hiddenAppointmentStatuses.has(normalizeStatus(appointment.status)) ||
-  hiddenPaymentStatuses.has(normalizeStatus(appointment.paymentStatus));
+  hiddenPaymentStatuses.has(normalizeStatus(appointment.paymentStatus)) ||
+  isReservationExpired(appointment);
 
 export default function AppointmentManagement() {
   const { user } = useAuth();
@@ -78,12 +84,16 @@ export default function AppointmentManagement() {
     );
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      const data = snapshot.docs
-        .map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-        }))
+      const appointments = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+      const data = appointments
         .filter((appointment) => !shouldHideAppointment(appointment));
+
+      syncExpiredReservations(appointments).catch((error) => {
+        console.error("Failed to sync expired reservations:", error);
+      });
 
       setAllAppointments(data);
     });
