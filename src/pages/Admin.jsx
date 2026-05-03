@@ -29,6 +29,18 @@ const shouldHideAppointment = (appointment) =>
   hiddenAppointmentStatuses.has(normalizeStatus(appointment.status)) ||
   hiddenPaymentStatuses.has(normalizeStatus(appointment.paymentStatus));
 
+const isPendingAppointment = (appointment) => {
+  const status = normalizeStatus(appointment.status);
+  const paymentStatus = normalizeStatus(appointment.paymentStatus);
+
+  return (
+    !status ||
+    status === "pending" ||
+    status === "pending_payment" ||
+    paymentStatus === "pending"
+  );
+};
+
 function sortByAppointmentDateTime(a, b) {
   const aDateTime = getAppointmentDateTime(a.date, a.time);
   const bDateTime = getAppointmentDateTime(b.date, b.time);
@@ -277,7 +289,7 @@ export default function Admin() {
                   <div className="ml-4">
                     <p className="text-sm font-medium text-gray-600">Pending</p>
                     <p className="text-2xl font-bold text-gray-900">
-                      {allAppointments.filter(appt => !appt.status || appt.status === "pending").length}
+                      {allAppointments.filter(isPendingAppointment).length}
                     </p>
                   </div>
                 </div>
