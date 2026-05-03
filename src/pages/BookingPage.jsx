@@ -8,6 +8,7 @@ import { db } from "../firebase/firebase";
 import { collection, query, where, onSnapshot, doc } from "firebase/firestore";
 import {
   formatReservationCountdown,
+  expireAppointmentReservation,
   getFallbackReservationExpiresAt,
   getPaymentReferenceId,
   getReservationSecondsRemaining,
@@ -152,6 +153,7 @@ export default function BookingPage() {
 
     try {
       await cancelQrPayment(appointmentId, "expired");
+      await expireAppointmentReservation(appointmentId);
       setShowPaymentModal(false);
       setQrImage(null);
       setAppointmentId(null);
@@ -253,6 +255,11 @@ export default function BookingPage() {
       setReservationExpiresAt(null);
       setReservationSecondsRemaining(null);
     }
+  };
+
+  const closePaymentModal = () => {
+    setShowPaymentModal(false);
+    setPaymentError("");
   };
 
   const handleBookAnotherAppointment = () => {
@@ -529,7 +536,7 @@ export default function BookingPage() {
                         onClick={
                           paymentSuccess
                             ? handleBookAnotherAppointment
-                            : cancelPendingAppointment
+                            : closePaymentModal
                         }
                         aria-label="Close payment modal"
                         className="absolute top-3 right-4 inline-flex h-8 w-8 items-center justify-center rounded-full text-gray-400 transition hover:bg-gray-100 hover:text-black cursor-pointer"

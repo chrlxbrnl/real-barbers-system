@@ -169,13 +169,16 @@ export function getResolvedAppointmentStatus(appointment) {
   const paymentStatus = normalizeStatus(appointment.paymentStatus);
 
   if (status === "cancelled" || status === "canceled") return "cancelled";
+  if (paymentStatus === "cancelled" || paymentStatus === "canceled") {
+    return "cancelled";
+  }
+  if (status === "expired" || paymentStatus === "expired") return "cancelled";
   if (status === "payment_review" || paymentStatus === "paid_late") {
     return "payment_review";
   }
-  if (status === "expired" || paymentStatus === "expired") return "expired";
   if (status === "completed") return "completed";
   if (status === "no_show") return "no-show";
-  if (isReservationExpired(appointment)) return "expired";
+  if (isReservationExpired(appointment)) return "cancelled";
 
   if (!hasAppointmentStarted(appointment.date, appointment.time)) {
     return appointment.status || "pending";
@@ -252,18 +255,23 @@ export async function syncExpiredReservations(appointments) {
     .filter((appointment) => {
       const status = normalizeStatus(appointment.status);
       const paymentStatus = normalizeStatus(appointment.paymentStatus);
+      const expired =
+        isReservationExpired(appointment) ||
+        status === "expired" ||
+        paymentStatus === "expired";
 
       return (
-        isReservationExpired(appointment) &&
-        status !== "expired" &&
-        paymentStatus !== "expired"
+        expired &&
+        status !== "cancelled" &&
+        paymentStatus !== "cancelled"
       );
     })
     .map((appointment) =>
       updateDoc(doc(db, "appointments", appointment.id), {
-        status: "expired",
-        paymentStatus: "expired",
-        slotStatus: "expired",
+        status: "cancelled",
+        paymentStatus: "cancelled",
+        slotStatus: "released",
+        cancelledAt: new Date(),
         expiredAt: new Date(),
         updatedAt: new Date(),
       }),
@@ -274,9 +282,10 @@ export async function syncExpiredReservations(appointments) {
 
 export async function expireAppointmentReservation(id) {
   await updateDoc(doc(db, "appointments", id), {
-    status: "expired",
-    paymentStatus: "expired",
-    slotStatus: "expired",
+    status: "cancelled",
+    paymentStatus: "cancelled",
+    slotStatus: "released",
+    cancelledAt: new Date(),
     expiredAt: new Date(),
     updatedAt: new Date(),
   });
