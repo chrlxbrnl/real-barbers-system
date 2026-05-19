@@ -9,6 +9,7 @@ import Account from "./pages/Account";
 import Admin from "./pages/Admin";
 import AppointmentManagement from "./pages/AppointmentManagement";
 import HaircutManagement from "./pages/HaircutManagement";
+import UserManagement from "./pages/UserManagement";
 
 function App() {
   return (
@@ -23,6 +24,7 @@ function App() {
           <Route path="/admin" element={<Admin />} />
           <Route path="/admin/appointments" element={<AppointmentManagement />} />
           <Route path="/admin/haircuts" element={<HaircutManagement />} />
+          <Route path="/admin/users" element={<UserManagement />} />
         </Routes>
       </BrowserRouter>
     </AuthProvider>

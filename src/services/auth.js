@@ -22,6 +22,8 @@ async function createUserDoc(user, extraData = {}) {
       fullName: extraData.fullName || user.displayName || "",
       email: user.email || "",
       provider: extraData.provider || "unknown",
+      role: "user",
+      active: true,
       createdAt: serverTimestamp(),
     });
   }
@@ -56,6 +58,8 @@ export async function signupWithEmail(fullName, email, password) {
     fullName,
     email,
     provider: "password",
+    role: "user",
+    active: true,
     createdAt: serverTimestamp(),
   });
 

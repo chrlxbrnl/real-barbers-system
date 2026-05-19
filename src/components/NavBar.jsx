@@ -52,6 +52,9 @@ export default function NavBar() {
                 <li>
                   <Link to="/admin/haircuts">Haircut Management</Link>
                 </li>
+                <li>
+                  <Link to="/admin/users">User Management</Link>
+                </li>
               </ul>
 
               {/* User Account Dropdown */}
@@ -217,6 +220,15 @@ export default function NavBar() {
                   onClick={() => setIsOpen(false)}
                 >
                   Haircut Management
+                </Link>
+              </li>
+              <li>
+                <Link
+                  to="/admin/users"
+                  className="block rounded px-3 py-2 hover:bg-gray-100"
+                  onClick={() => setIsOpen(false)}
+                >
+                  User Management
                 </Link>
               </li>
               {user && (

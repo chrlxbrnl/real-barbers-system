@@ -18,11 +18,19 @@ export function AuthProvider({ children }) {
 
         // get profile (with role)
         const profile = await getUserProfile(u);
+        const role = profile?.role || "user";
+
+        if (role !== "admin" && profile?.active === false) {
+          await signOut(auth);
+          setUser(null);
+          return;
+        }
 
         setUser({
           ...u,
-          role: profile?.role || "user",
+          role,
           firstName: profile?.firstName || "",
+          active: profile?.active !== false,
         });
       } else {
         setUser(null);

@@ -4,6 +4,7 @@ import NavBar from "../components/NavBar";
 import { useAuth } from "../context/AuthContext";
 import AuthGate from "../components/auth/AuthGate";
 import { updatePassword, updateProfile } from "firebase/auth";
+import { auth } from "../firebase/firebase";
 
 export default function Account() {
   const { user, logout } = useAuth();
@@ -13,6 +14,7 @@ export default function Account() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [phone, setPhone] = useState("");
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -32,18 +34,27 @@ export default function Account() {
 
   const handleSave = async () => {
     try {
+      setSaving(true);
+      const currentUser = auth.currentUser;
+
+      if (!currentUser) {
+        alert("Please log in again before updating your account.");
+        return;
+      }
+
+      const fullName = `${firstName} ${lastName}`.trim();
+
       // Save profile (Firestore)
       await saveUserProfile(user, {
-        firstName,
-        lastName,
-        phone,
+        firstName: firstName.trim(),
+        lastName: lastName.trim(),
+        fullName,
+        phone: phone.trim(),
       });
 
       // Sync name to Firebase Auth
-      const fullName = `${firstName} ${lastName}`.trim();
-
-      if (fullName && fullName !== user.displayName) {
-        await updateProfile(user, {
+      if (fullName && fullName !== currentUser.displayName) {
+        await updateProfile(currentUser, {
           displayName: fullName,
         });
       }
@@ -60,7 +71,7 @@ export default function Account() {
           return;
         }
 
-        await updatePassword(user, password);
+        await updatePassword(currentUser, password);
 
         // clear inputs
         setPassword("");
@@ -77,6 +88,8 @@ export default function Account() {
       } else {
         alert("Failed to update profile");
       }
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -184,9 +197,10 @@ export default function Account() {
 
             <button
               onClick={handleSave}
-              className="bg-black text-white px-4 py-2 rounded-full text-sm hover:bg-gray-800"
+              disabled={saving}
+              className="bg-black text-white px-4 py-2 rounded-full text-sm hover:bg-gray-800 disabled:bg-gray-400"
             >
-              Save Changes
+              {saving ? "Saving..." : "Save Changes"}
             </button>
           </div>
 
