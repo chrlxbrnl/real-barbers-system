@@ -14,6 +14,7 @@ import NavBar from "../components/NavBar";
 import AuthGate from "../components/auth/AuthGate";
 import {
   deleteAppointment,
+  getPaymentReferenceId,
   isReservationExpired,
   syncExpiredReservations,
 } from "../services/appointments";
@@ -439,6 +440,9 @@ export default function AppointmentManagement() {
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Payment
                     </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Transaction ID
+                    </th>
                     <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Actions
                     </th>
@@ -496,6 +500,11 @@ export default function AppointmentManagement() {
                         >
                           {appt.paymentStatus || "unpaid"}
                         </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                        <div className="max-w-xs overflow-hidden text-ellipsis whitespace-nowrap font-mono text-xs">
+                          {getPaymentReferenceId(appt) || "N/A"}
+                        </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                         <div className="flex justify-end space-x-2">
