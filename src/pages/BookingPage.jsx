@@ -14,7 +14,11 @@ import {
   getReservationSecondsRemaining,
   isActiveSlotReservation,
 } from "../services/appointments";
-import { cancelQrPayment, requestQrPayment } from "../services/payments";
+import {
+  cancelQrPayment,
+  checkQrPaymentStatus,
+  requestQrPayment,
+} from "../services/payments";
 
 const DAYS = ["M", "T", "W", "T", "F", "S", "S"];
 
@@ -58,6 +62,9 @@ const MONTH_NAMES = [
   "November",
   "December",
 ];
+
+const normalizeStatus = (status) =>
+  status?.toString().trim().toLowerCase().replace(/[\s-]+/g, "_");
 
 function getFirstName(name) {
   return name?.trim().split(/\s+/)[0] || "there";
@@ -147,6 +154,79 @@ export default function BookingPage() {
 
     return () => unsubscribe();
   }, [appointmentId, user, paymentReferenceId]);
+
+  useEffect(() => {
+    if (!showPaymentModal || paymentSuccess || !appointmentId) return;
+
+    let stopped = false;
+
+    const syncPaymentStatus = async () => {
+      try {
+        const data = await checkQrPaymentStatus(appointmentId);
+
+        const booking = data.appointment || {};
+        const bookingStatus = normalizeStatus(booking.status);
+        const bookingPaymentStatus = normalizeStatus(
+          booking.paymentStatus || data.status,
+        );
+        const isConfirmedPayment =
+          bookingStatus === "confirmed" || bookingPaymentStatus === "paid";
+
+        if (stopped || !isConfirmedPayment) {
+          if (data.paid && bookingPaymentStatus === "paid_late") {
+            setPaymentError(
+              "Payment was received after the slot hold expired. Please contact the shop so they can confirm the schedule.",
+            );
+          }
+          return;
+        }
+
+        const displayName = booking.fullName || user?.displayName || user?.email;
+
+        setConfirmedBooking({
+          firstName: getFirstName(displayName),
+          date: booking.date || `${MONTH_NAMES[viewMonth]} ${selectedDate}, ${viewYear}`,
+          time: booking.time || selectedTime,
+          amountPaid: booking.amountPaid || booking.amount || 150,
+          paymentReferenceId:
+            getPaymentReferenceId(booking) ||
+            data.paymentId ||
+            data.paymentIntentId ||
+            paymentReferenceId ||
+            appointmentId,
+        });
+        setPaymentReferenceId(
+          getPaymentReferenceId(booking) ||
+            data.paymentId ||
+            data.paymentIntentId ||
+            paymentReferenceId ||
+            appointmentId,
+        );
+        setPaymentSuccess(true);
+        setReservationSecondsRemaining(null);
+      } catch (error) {
+        console.error("Failed to check payment status:", error);
+      }
+    };
+
+    syncPaymentStatus();
+    const intervalId = window.setInterval(syncPaymentStatus, 5000);
+
+    return () => {
+      stopped = true;
+      window.clearInterval(intervalId);
+    };
+  }, [
+    appointmentId,
+    paymentReferenceId,
+    paymentSuccess,
+    selectedDate,
+    selectedTime,
+    showPaymentModal,
+    user,
+    viewMonth,
+    viewYear,
+  ]);
 
   const expirePendingReservation = useCallback(async () => {
     if (!appointmentId) return;

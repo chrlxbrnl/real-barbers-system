@@ -1,4 +1,5 @@
-const PAYMENT_API_BASE_URL = "https://real-barbers-paymongo-api.vercel.app/api";
+const PAYMENT_API_BASE_URL = "https://real-barbers-paymongo-api-1yyi.vercel.app/api";
+// const PAYMENT_API_BASE_URL = "/api";
 const PAYMENT_REQUEST_TIMEOUT_MS = 20000;
 
 async function fetchWithTimeout(path, options = {}) {
@@ -47,6 +48,25 @@ export async function requestQrPayment(payload) {
   });
 
   const data = await res.json();
+  // const text = await res.text();
+  // const data = text ? JSON.parse(text) : {};
+
+  if (!res.ok) {
+    throw new Error(getPaymentErrorMessage(data));
+  }
+
+  return data;
+}
+
+export async function checkQrPaymentStatus(appointmentId) {
+  const res = await fetchWithTimeout(
+    `/check-payment-status?appointmentId=${encodeURIComponent(appointmentId)}`,
+    {
+      method: "GET",
+    },
+  );
+
+  const data = await res.json().catch(() => ({}));
 
   if (!res.ok) {
     throw new Error(getPaymentErrorMessage(data));

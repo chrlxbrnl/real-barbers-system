@@ -5,9 +5,11 @@ import { useAuth } from "../context/AuthContext";
 import AuthGate from "../components/auth/AuthGate";
 import { updatePassword, updateProfile } from "firebase/auth";
 import { auth } from "../firebase/firebase";
+import { useNavigate } from "react-router-dom";
 
 export default function Account() {
   const { user, logout } = useAuth();
+  const navigate = useNavigate();
 
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -230,7 +232,13 @@ export default function Account() {
 
         {/* Logout bottom right */}
         <div className="flex justify-end mt-6">
-          <button onClick={logout} className="text-sm underline text-gray-600">
+          <button
+            onClick={() => {
+              logout();
+              navigate("/home");
+            }}
+            className="text-sm underline text-gray-600"
+          >
             Logout
           </button>
         </div>

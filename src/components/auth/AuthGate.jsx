@@ -6,9 +6,10 @@ import {
   signInWithFacebook,
   loginWithEmail,
 } from "../../services/auth";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import CreateProfile from "./CreateProfile";
 import { useNavigate } from "react-router-dom";
+// import { useAuth } from "../../context/AuthContext";
 
 const authIcons = [
   { name: "google", icon: googleIcon },
@@ -22,6 +23,18 @@ export default function AuthGate() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  // const { user } = useAuth();
+
+  // // Redirect based on user role after login
+  // useEffect(() => {
+  //   if (user) {
+  //     if (user.role === "admin") {
+  //       navigate("/admin");
+  //     } else {
+  //       navigate("/account");
+  //     }
+  //   }
+  // }, [user, navigate]);
 
   const handleAuthClick = async (providerName) => {
     try {

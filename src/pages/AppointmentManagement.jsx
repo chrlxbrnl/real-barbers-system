@@ -252,8 +252,8 @@ export default function AppointmentManagement() {
   }
 
   // not logged in
-  if (!user) {
-    return <AuthGate />;
+  if (user === null) {
+    return null;
   }
 
   // not admin

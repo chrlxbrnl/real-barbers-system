@@ -185,7 +185,7 @@ export default function Admin() {
 
   // not logged in
   if (user === null) {
-    return <AuthGate />;
+    return null;
   }
 
   // not admin

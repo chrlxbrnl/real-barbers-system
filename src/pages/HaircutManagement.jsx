@@ -143,8 +143,8 @@ export default function HaircutManagement() {
     );
   }
 
-  if (!user) {
-    return <AuthGate />;
+  if (user === null) {
+    return null;
   }
 
   if (!isAdmin(user)) {

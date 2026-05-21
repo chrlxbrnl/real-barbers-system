@@ -1,5 +1,15 @@
 import { db } from "../firebase/firebase";
-import { doc, setDoc, getDoc, serverTimestamp } from "firebase/firestore";
+import {
+  collection,
+  doc,
+  getDoc,
+  onSnapshot,
+  orderBy,
+  query,
+  serverTimestamp,
+  setDoc,
+  updateDoc,
+} from "firebase/firestore";
 
 // CREATE USER IF NOT EXISTS
 export async function createUserIfNotExists(user) {
@@ -12,7 +22,8 @@ export async function createUserIfNotExists(user) {
       firstName: "",
       lastName: "",
       phone: "",
-      role: "user", // 🔥 default role
+      role: "user",
+      active: true,
       createdAt: serverTimestamp(),
     });
   }
@@ -42,4 +53,41 @@ export async function getUserProfile(user) {
   } else {
     return null;
   }
+}
+
+export function subscribeCustomerAccounts(onData, onError) {
+  const q = query(collection(db, "users"), orderBy("createdAt", "desc"));
+
+  return onSnapshot(
+    q,
+    (snapshot) => {
+      const accounts = snapshot.docs
+        .map((document) => ({
+          id: document.id,
+          ...document.data(),
+        }))
+        .filter((account) => (account.role || "user") !== "admin");
+
+      onData(accounts);
+    },
+    onError,
+  );
+}
+
+export async function updateCustomerAccount(userId, data) {
+  const ref = doc(db, "users", userId);
+
+  await updateDoc(ref, {
+    ...data,
+    updatedAt: serverTimestamp(),
+  });
+}
+
+export async function setCustomerAccountActive(userId, active) {
+  const ref = doc(db, "users", userId);
+
+  await updateDoc(ref, {
+    active,
+    updatedAt: serverTimestamp(),
+  });
 }

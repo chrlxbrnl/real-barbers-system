@@ -10,22 +10,25 @@ import Admin from "./pages/Admin";
 import AppointmentManagement from "./pages/AppointmentManagement";
 import HaircutManagement from "./pages/HaircutManagement";
 import UserManagement from "./pages/UserManagement";
+import RouteGuard from "./components/RouteGuard";
 
 function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<LandingPage />} />
-          <Route path="/home" element={<Home />} />
-          <Route path="/appointment" element={<Appointment />} />
-          <Route path="/book" element={<BookingPage />} />
-          <Route path="/account" element={<Account />} />
-          <Route path="/admin" element={<Admin />} />
-          <Route path="/admin/appointments" element={<AppointmentManagement />} />
-          <Route path="/admin/haircuts" element={<HaircutManagement />} />
-          <Route path="/admin/users" element={<UserManagement />} />
-        </Routes>
+        <RouteGuard>
+          <Routes>
+            <Route path="/" element={<LandingPage />} />
+            <Route path="/home" element={<Home />} />
+            <Route path="/appointment" element={<Appointment />} />
+            <Route path="/book" element={<BookingPage />} />
+            <Route path="/account" element={<Account />} />
+            <Route path="/admin" element={<Admin />} />
+            <Route path="/admin/appointments" element={<AppointmentManagement />} />
+            <Route path="/admin/haircuts" element={<HaircutManagement />} />
+            <Route path="/admin/users" element={<UserManagement />} />
+          </Routes>
+        </RouteGuard>
       </BrowserRouter>
     </AuthProvider>
   );

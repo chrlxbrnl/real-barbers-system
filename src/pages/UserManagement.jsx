@@ -178,8 +178,8 @@ export default function UserManagement() {
     );
   }
 
-  if (!user) {
-    return <AuthGate />;
+  if (user === null) {
+    return null;
   }
 
   if (!isAdmin(user)) {
