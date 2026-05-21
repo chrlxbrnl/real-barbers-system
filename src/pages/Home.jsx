@@ -5,6 +5,7 @@ import InfoSection from "../components/home/InfoSection";
 import ShopDetailsCard from "../components/home/ShopDetailsCard";
 import NavBar from "../components/NavBar";
 import { useAuth } from "../context/AuthContext";
+import scrollToSection from "../utils/scrollToSection";
 
 function HomeSkeleton() {
   return (
@@ -98,10 +99,7 @@ export default function Home() {
     const sectionId = location.hash.replace("#", "");
 
     requestAnimationFrame(() => {
-      document.getElementById(sectionId)?.scrollIntoView({
-        behavior: "smooth",
-        block: "start",
-      });
+      scrollToSection(sectionId);
     });
   }, [location.hash]);
 

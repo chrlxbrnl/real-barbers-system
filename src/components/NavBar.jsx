@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Menu, LogOut } from "lucide-react";
 import Logo from "./Logo";
 import { Link, useLocation, useNavigate } from "react-router-dom";
+import scrollToSection from "../utils/scrollToSection";
 import { useAuth } from "../context/AuthContext";
 import { isAdmin } from "../utils/isAdmin";
 
@@ -45,9 +46,10 @@ export default function NavBar() {
     setIsOpen(false);
 
     if (location.pathname === "/home") {
-      document.getElementById(sectionId)?.scrollIntoView({
-        behavior: "smooth",
-        block: "start",
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          scrollToSection(sectionId);
+        });
       });
       return;
     }
