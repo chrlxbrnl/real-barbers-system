@@ -68,7 +68,11 @@ export default function NavBar() {
     <header className="bg-white border-b border-gray-200">
       <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center py-3">
-          <Link to="/" className="flex items-center" onClick={() => setIsOpen(false)}>
+          <Link
+            to={isAdmin(user) ? "/admin" : "/"}
+            className="flex items-center"
+            onClick={() => setIsOpen(false)}
+          >
             <Logo />
           </Link>
 
@@ -119,7 +123,7 @@ export default function NavBar() {
                       <button
                         onClick={() => {
                           logout();
-                          navigate("/home");
+                          navigate("/");
                           setIsUserMenuOpen(false);
                         }}
                         className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2 cursor-pointer"

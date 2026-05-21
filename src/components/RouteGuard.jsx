@@ -13,7 +13,7 @@ export default function RouteGuard({ children }) {
     "/admin/haircuts",
     "/admin/users",
   ];
-  const allowedForAdmins = [...adminRoutes, "/account"]; // Allow admins to access account page
+  const allowedForAdmins = [...adminRoutes, "/account", "/"]; // Allow admins to access account and landing page
   const isAdminRoute = adminRoutes.includes(location.pathname);
   const isAllowedForAdmin = allowedForAdmins.includes(location.pathname);
   const isAdmin = user?.role === "admin";

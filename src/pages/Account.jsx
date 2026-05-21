@@ -46,7 +46,6 @@ export default function Account() {
 
       const fullName = `${firstName} ${lastName}`.trim();
 
-      // Save profile (Firestore)
       await saveUserProfile(user, {
         firstName: firstName.trim(),
         lastName: lastName.trim(),
@@ -75,7 +74,6 @@ export default function Account() {
 
         await updatePassword(currentUser, password);
 
-        // clear inputs
         setPassword("");
         setConfirmPassword("");
       }
@@ -84,7 +82,6 @@ export default function Account() {
     } catch (err) {
       console.error(err);
 
-      // Handle common Firebase error
       if (err.code === "auth/requires-recent-login") {
         alert("Please log in again before changing password.");
       } else {
@@ -98,7 +95,6 @@ export default function Account() {
   if (user === undefined) {
     return (
       <div className="bg-[#f5f5f5] min-h-screen">
-        {/* Skeleton NavBar */}
         <nav className="bg-white shadow-sm border-b border-gray-200 animate-pulse">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
             <div className="flex items-center justify-between">
@@ -226,7 +222,7 @@ export default function Account() {
             <button
               onClick={() => {
                 logout();
-                navigate("/home");
+                navigate("/");
               }}
               className="text-sm underline text-gray-600"
             >
