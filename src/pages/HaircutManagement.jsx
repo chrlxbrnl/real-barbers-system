@@ -26,6 +26,9 @@ export default function HaircutManagement() {
   const [saving, setSaving] = useState(false);
   const [editingStyle, setEditingStyle] = useState(null);
   const [form, setForm] = useState(emptyForm);
+  const [currentPage, setCurrentPage] = useState(1);
+
+  const ITEMS_PER_PAGE = 10;
 
   const styles = useMemo(
     () =>
@@ -35,6 +38,15 @@ export default function HaircutManagement() {
       }),
     [firestoreStyles],
   );
+
+  // Reset to first page when styles change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [styles]);
+
+  const totalPages = Math.ceil(styles.length / ITEMS_PER_PAGE);
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const paginatedStyles = styles.slice(startIndex, startIndex + ITEMS_PER_PAGE);
 
   useEffect(() => {
     if (!user || !isAdmin(user)) {
@@ -265,7 +277,7 @@ export default function HaircutManagement() {
               <button
                 type="submit"
                 disabled={saving}
-                className="w-full inline-flex items-center justify-center gap-2 px-4 py-2 bg-black text-white text-sm font-medium rounded-md hover:bg-gray-800 disabled:bg-gray-400"
+                className="w-full inline-flex items-center justify-center gap-2 px-4 py-2 bg-black text-white text-sm font-medium rounded-md hover:bg-gray-800 cursor-pointer disabled:bg-gray-400"
               >
                 <Save className="h-4 w-4" />
                 {saving ? "Saving..." : editingStyle ? "Save Changes" : "Add Style"}
@@ -297,6 +309,7 @@ export default function HaircutManagement() {
                   <p className="text-gray-500">No haircut styles found</p>
                 </div>
               ) : (
+                <>
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50">
                     <tr>
@@ -315,7 +328,7 @@ export default function HaircutManagement() {
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
-                    {styles.map((style) => (
+                    {paginatedStyles.map((style) => (
                       <tr key={style.id} className="hover:bg-gray-50">
                         <td className="px-6 py-4">
                           <div className="flex items-center gap-3">
@@ -367,6 +380,47 @@ export default function HaircutManagement() {
                     ))}
                   </tbody>
                 </table>
+
+                {/* Pagination Controls */}
+                <div className="px-6 py-4 border-t border-gray-200 flex items-center justify-between">
+                  <div className="text-sm text-gray-600">
+                    Showing {startIndex + 1} to {Math.min(startIndex + ITEMS_PER_PAGE, styles.length)} of {styles.length} haircuts
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                      disabled={currentPage === 1}
+                      className="px-3 py-1 border border-gray-300 rounded-md text-sm font-medium text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed hover:border-black hover:text-black transition cursor-pointer"
+                    >
+                      Previous
+                    </button>
+                    <div className="flex items-center gap-1">
+                      {Array.from({ length: totalPages }, (_, i) => i + 1).map(
+                        (page) => (
+                          <button
+                            key={page}
+                            onClick={() => setCurrentPage(page)}
+                            className={`px-3 py-1 rounded-md text-sm font-medium transition ${
+                              currentPage === page
+                                ? "bg-black text-white"
+                                : "border border-gray-300 text-gray-700 hover:border-black hover:text-black cursor-pointer"
+                            }`}
+                          >
+                            {page}
+                          </button>
+                        )
+                      )}
+                    </div>
+                    <button
+                      onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                      disabled={currentPage === totalPages}
+                      className="px-3 py-1 border border-gray-300 rounded-md text-sm font-medium text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed hover:border-black hover:text-black transition cursor-pointer"
+                    >
+                      Next
+                    </button>
+                  </div>
+                </div>
+                </>
               )}
             </div>
           </section>

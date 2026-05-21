@@ -51,6 +51,9 @@ export default function UserManagement() {
   const [searchTerm, setSearchTerm] = useState("");
   const [editingAccount, setEditingAccount] = useState(null);
   const [form, setForm] = useState(emptyForm);
+  const [currentPage, setCurrentPage] = useState(1);
+
+  const ITEMS_PER_PAGE = 10;
 
   useEffect(() => {
     if (!user || !isAdmin(user)) {
@@ -91,6 +94,18 @@ export default function UserManagement() {
       return searchable.includes(normalizedSearch);
     });
   }, [accounts, searchTerm]);
+
+  // Reset to first page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm]);
+
+  const totalPages = Math.ceil(filteredAccounts.length / ITEMS_PER_PAGE);
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const paginatedAccounts = filteredAccounts.slice(
+    startIndex,
+    startIndex + ITEMS_PER_PAGE,
+  );
 
   const activeCount = useMemo(
     () => accounts.filter((account) => account.active !== false).length,
@@ -400,6 +415,7 @@ export default function UserManagement() {
                   <p className="text-gray-500">No customer accounts found</p>
                 </div>
               ) : (
+                <>
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50">
                     <tr>
@@ -421,7 +437,7 @@ export default function UserManagement() {
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
-                    {filteredAccounts.map((account) => {
+                    {paginatedAccounts.map((account) => {
                       const isActive = account.active !== false;
 
                       return (
@@ -484,6 +500,47 @@ export default function UserManagement() {
                     })}
                   </tbody>
                 </table>
+
+                {/* Pagination Controls */}
+                <div className="px-6 py-4 border-t border-gray-200 flex items-center justify-between">
+                  <div className="text-sm text-gray-600">
+                    Showing {startIndex + 1} to {Math.min(startIndex + ITEMS_PER_PAGE, filteredAccounts.length)} of {filteredAccounts.length} customers
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                      disabled={currentPage === 1}
+                      className="px-3 py-1 border border-gray-300 rounded-md text-sm font-medium text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed hover:border-black hover:text-black transition cursor-pointer"
+                    >
+                      Previous
+                    </button>
+                    <div className="flex items-center gap-1">
+                      {Array.from({ length: totalPages }, (_, i) => i + 1).map(
+                        (page) => (
+                          <button
+                            key={page}
+                            onClick={() => setCurrentPage(page)}
+                            className={`px-3 py-1 rounded-md text-sm font-medium transition ${
+                              currentPage === page
+                                ? "bg-black text-white"
+                                : "border border-gray-300 text-gray-700 hover:border-black hover:text-black cursor-pointer"
+                            }`}
+                          >
+                            {page}
+                          </button>
+                        )
+                      )}
+                    </div>
+                    <button
+                      onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                      disabled={currentPage === totalPages}
+                      className="px-3 py-1 border border-gray-300 rounded-md text-sm font-medium text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed hover:border-black hover:text-black transition cursor-pointer"
+                    >
+                      Next
+                    </button>
+                  </div>
+                </div>
+                </>
               )}
             </div>
           </section>
