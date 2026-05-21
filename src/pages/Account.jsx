@@ -111,13 +111,15 @@ export default function Account() {
             </div>
           </div>
         </nav>
-        <div className="max-w-5xl mx-auto mt-10 bg-white rounded-2xl p-8 shadow animate-pulse">
-          <div className="grid md:grid-cols-2 gap-10">
-            <div>
-              <div className="h-6 bg-gray-200 rounded w-48 mb-4"></div>
-              <div className="flex items-center gap-4 mb-4">
-                <div className="w-14 h-14 bg-gray-200 rounded-full"></div>
-                <div className="h-4 bg-gray-200 rounded w-40"></div>
+        <div className="max-w-5xl mx-auto mt-10 px-4 sm:px-6 lg:px-8">
+          <div className="bg-white rounded-2xl p-8 shadow animate-pulse">
+            <div className="grid md:grid-cols-2 gap-10">
+              <div>
+                <div className="h-6 bg-gray-200 rounded w-48 mb-4"></div>
+                <div className="flex items-center gap-4 mb-4">
+                  <div className="w-14 h-14 bg-gray-200 rounded-full"></div>
+                  <div className="h-4 bg-gray-200 rounded w-40"></div>
+                </div>
               </div>
             </div>
           </div>
@@ -142,105 +144,88 @@ export default function Account() {
     <div className="bg-[#f5f5f5] min-h-screen">
       <NavBar />
 
-      <div className="max-w-5xl mx-auto mt-10 bg-white rounded-2xl p-8 shadow">
-        <div className="grid md:grid-cols-2 gap-10">
-          {/* LEFT SIDE */}
-          <div>
-            <h2 className="text-lg font-semibold mb-4">Account settings</h2>
+      <div className="max-w-5xl mx-auto mt-10 px-4 sm:px-6 lg:px-8">
+        <div className="bg-white rounded-2xl p-8 shadow">
+          <div className="grid md:grid-cols-2 gap-10">
+            {/* LEFT SIDE */}
+            <div>
+              <h2 className="text-lg font-semibold mb-4">Account settings</h2>
 
-            {/* Profile */}
-            <div className="flex items-center gap-4 mb-4">
-              <img
-                src={
-                  user?.photoURL ||
-                  "https://ui-avatars.com/api/?name=" +
-                    (user?.displayName || "User")
-                }
-                className="w-14 h-14 rounded-full"
+              {/* Inputs */}
+              <div className="grid grid-cols-2 gap-4 mb-4">
+                <input
+                  placeholder="Last name"
+                  value={lastName}
+                  onChange={(e) => setLastName(e.target.value)}
+                  className="border rounded-full px-4 py-2 text-sm"
+                />
+                <input
+                  placeholder="First name"
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
+                  className="border rounded-full px-4 py-2 text-sm"
+                />
+              </div>
+
+              <input
+                placeholder="Email address"
+                value={user?.email || ""}
+                disabled
+                className="border rounded-full px-4 py-2 text-sm w-full mb-4 bg-gray-100"
               />
-              <span className="text-sm text-gray-600 cursor-pointer">
-                Click here to change profile picture
-              </span>
+
+              <input
+                placeholder="Phone number"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                className="border rounded-full px-4 py-2 text-sm w-full mb-4"
+              />
+
+              <button
+                onClick={handleSave}
+                disabled={saving}
+                className="bg-black text-white px-4 py-2 rounded-full text-sm hover:bg-gray-800 disabled:bg-gray-400"
+              >
+                {saving ? "Saving..." : "Save Changes"}
+              </button>
             </div>
 
-            <p className="text-xs text-gray-400 mb-4">
-              Personal information and phone number
-            </p>
+            {/* RIGHT SIDE */}
+            <div>
+              <h2 className="text-lg font-semibold mb-4">Security</h2>
 
-            {/* Inputs */}
-            <div className="grid grid-cols-2 gap-4 mb-4">
-              <input
-                placeholder="Last name"
-                value={lastName}
-                onChange={(e) => setLastName(e.target.value)}
-                className="border rounded-full px-4 py-2 text-sm"
-              />
-              <input
-                placeholder="First name"
-                value={firstName}
-                onChange={(e) => setFirstName(e.target.value)}
-                className="border rounded-full px-4 py-2 text-sm"
-              />
+              <div className="space-y-3">
+                <input
+                  type="password"
+                  placeholder="New Password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="border rounded-full px-4 py-2 text-sm w-full"
+                />
+
+                <input
+                  type="password"
+                  placeholder="Confirm Password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  className="border rounded-full px-4 py-2 text-sm w-full"
+                />
+              </div>
             </div>
+          </div>
 
-            <input
-              placeholder="Email address"
-              value={user?.email || ""}
-              disabled
-              className="border rounded-full px-4 py-2 text-sm w-full mb-4 bg-gray-100"
-            />
-
-            <input
-              placeholder="Phone number"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              className="border rounded-full px-4 py-2 text-sm w-full mb-4"
-            />
-
+          {/* Logout bottom right */}
+          <div className="flex justify-end mt-6">
             <button
-              onClick={handleSave}
-              disabled={saving}
-              className="bg-black text-white px-4 py-2 rounded-full text-sm hover:bg-gray-800 disabled:bg-gray-400"
+              onClick={() => {
+                logout();
+                navigate("/home");
+              }}
+              className="text-sm underline text-gray-600"
             >
-              {saving ? "Saving..." : "Save Changes"}
+              Logout
             </button>
           </div>
-
-          {/* RIGHT SIDE */}
-          <div>
-            <h2 className="text-lg font-semibold mb-4">Security</h2>
-
-            <div className="space-y-3">
-              <input
-                type="password"
-                placeholder="New Password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="border rounded-full px-4 py-2 text-sm w-full"
-              />
-
-              <input
-                type="password"
-                placeholder="Confirm Password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                className="border rounded-full px-4 py-2 text-sm w-full"
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* Logout bottom right */}
-        <div className="flex justify-end mt-6">
-          <button
-            onClick={() => {
-              logout();
-              navigate("/home");
-            }}
-            className="text-sm underline text-gray-600"
-          >
-            Logout
-          </button>
         </div>
       </div>
     </div>
