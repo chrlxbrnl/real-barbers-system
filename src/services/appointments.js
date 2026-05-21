@@ -1,28 +1,43 @@
 import { db } from "../firebase/firebase";
 import {
-    collection,
-    addDoc,
-    serverTimestamp,
-    query,
-    where,
-    getDocs,
-    doc,
-    deleteDoc,
-    updateDoc,
+  collection,
+  addDoc,
+  serverTimestamp,
+  query,
+  where,
+  getDocs,
+  doc,
+  deleteDoc,
+  updateDoc,
 } from "firebase/firestore";
 
 export const RESERVATION_WINDOW_MINUTES = 5;
 export const PAYMENT_QR_VALIDITY_MINUTES = 30;
 
 const MONTH_NAMES = [
-  "January", "February", "March", "April", "May", "June",
-  "July", "August", "September", "October", "November", "December",
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
 ];
 
 function parseTimeString(timeStr = "") {
   const [timePart, period] = timeStr.split(" ");
   const [hours, minutes] = timePart.split(":").map(Number);
-  const adjustedHours = period === "PM" && hours !== 12 ? hours + 12 : hours === 12 && period === "AM" ? 0 : hours;
+  const adjustedHours =
+    period === "PM" && hours !== 12
+      ? hours + 12
+      : hours === 12 && period === "AM"
+        ? 0
+        : hours;
   return { hours: adjustedHours, minutes };
 }
 
@@ -41,14 +56,21 @@ export function getAppointmentDateTime(appointmentDate, appointmentTime) {
 }
 
 export function hasAppointmentStarted(appointmentDate, appointmentTime) {
-  const appointmentDateTime = getAppointmentDateTime(appointmentDate, appointmentTime);
+  const appointmentDateTime = getAppointmentDateTime(
+    appointmentDate,
+    appointmentTime,
+  );
   if (!appointmentDateTime) return false;
 
   return appointmentDateTime < new Date();
 }
 
 const normalizeStatus = (status) =>
-  status?.toString().trim().toLowerCase().replace(/[\s-]+/g, "_");
+  status
+    ?.toString()
+    .trim()
+    .toLowerCase()
+    .replace(/[\s-]+/g, "_");
 
 export function normalizeAppointmentStatus(status) {
   return normalizeStatus(status);
@@ -260,11 +282,7 @@ export async function syncExpiredReservations(appointments) {
         status === "expired" ||
         paymentStatus === "expired";
 
-      return (
-        expired &&
-        status !== "cancelled" &&
-        paymentStatus !== "cancelled"
-      );
+      return expired && status !== "cancelled" && paymentStatus !== "cancelled";
     })
     .map((appointment) =>
       updateDoc(doc(db, "appointments", appointment.id), {
@@ -292,55 +310,54 @@ export async function expireAppointmentReservation(id) {
 }
 
 export async function createAppointment({ user, date, time }) {
-    // Check for time slot conflict with other users
-    const q = query(
-        collection(db, "appointments"),
-        where("date", "==", date),
-        where("time", "==", time)
-    );
+  const q = query(
+    collection(db, "appointments"),
+    where("date", "==", date),
+    where("time", "==", time),
+  );
 
-    const snapshot = await getDocs(q);
+  const snapshot = await getDocs(q);
 
-    if (!snapshot.empty) {
-        throw new Error("Time slot already booked");
+  if (!snapshot.empty) {
+    throw new Error("Time slot already booked");
+  }
+
+  // Check if user has existing appointment
+  const userAppointmentsQuery = query(
+    collection(db, "appointments"),
+    where("userId", "==", user.uid),
+  );
+
+  const userAppointmentsSnapshot = await getDocs(userAppointmentsQuery);
+
+  // Delete existing appointment if it hasn't started
+  if (!userAppointmentsSnapshot.empty) {
+    for (const doc of userAppointmentsSnapshot.docs) {
+      const existingAppt = doc.data();
+      if (!hasAppointmentStarted(existingAppt.date, existingAppt.time)) {
+        await deleteDoc(doc.ref);
+      }
     }
+  }
 
-    // Check if user has existing appointment
-    const userAppointmentsQuery = query(
-        collection(db, "appointments"),
-        where("userId", "==", user.uid)
-    );
-    
-    const userAppointmentsSnapshot = await getDocs(userAppointmentsQuery);
-    
-    // Delete existing appointment if it hasn't started
-    if (!userAppointmentsSnapshot.empty) {
-        for (const doc of userAppointmentsSnapshot.docs) {
-            const existingAppt = doc.data();
-            if (!hasAppointmentStarted(existingAppt.date, existingAppt.time)) {
-                await deleteDoc(doc.ref);
-            }
-        }
-    }
-
-    await addDoc(collection(db, "appointments"), {
-        userId: user.uid,
-        fullName: user.displayName || "",
-        email: user.email,
-        date,
-        time,
-        status: "pending",
-        createdAt: serverTimestamp(),
-    });
+  await addDoc(collection(db, "appointments"), {
+    userId: user.uid,
+    fullName: user.displayName || "",
+    email: user.email,
+    date,
+    time,
+    status: "pending",
+    createdAt: serverTimestamp(),
+  });
 }
 
 export async function deleteAppointment(id) {
-    await deleteDoc(doc(db, "appointments", id));
+  await deleteDoc(doc(db, "appointments", id));
 }
 
 export async function cancelAppointment(id) {
-    await updateDoc(doc(db, "appointments", id), {
-        status: "cancelled",
-        updatedAt: new Date(),
-    });
+  await updateDoc(doc(db, "appointments", id), {
+    status: "cancelled",
+    updatedAt: new Date(),
+  });
 }

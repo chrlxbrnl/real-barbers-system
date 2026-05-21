@@ -141,11 +141,9 @@ export default function Admin() {
     }
   };
 
-  // still checking auth
   if (user === undefined) {
     return (
       <div className="bg-[#f9f9f9] min-h-screen">
-        {/* Skeleton NavBar */}
         <nav className="bg-white shadow-sm border-b border-gray-200 animate-pulse">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
             <div className="flex items-center justify-between">
@@ -183,12 +181,10 @@ export default function Admin() {
     );
   }
 
-  // not logged in
   if (user === null) {
     return null;
   }
-
-  // not admin
+  
   if (!isAdmin(user)) {
     return <div className="text-center mt-20">Access denied</div>;
   }

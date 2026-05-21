@@ -144,7 +144,6 @@ export default function AppointmentManagement() {
     );
   }, [allAppointments, selectedDate, quickDateFilter]);
 
-  // Reset to first page when filters change
   useEffect(() => {
     setCurrentPage(1);
   }, [selectedDate, quickDateFilter]);
@@ -226,7 +225,6 @@ export default function AppointmentManagement() {
     }
   };
 
-  // still checking auth
   if (user === undefined) {
     return (
       <div className="bg-[#f9f9f9] min-h-screen">
@@ -266,12 +264,10 @@ export default function AppointmentManagement() {
     );
   }
 
-  // not logged in
   if (user === null) {
     return null;
   }
 
-  // not admin
   if (!isAdmin(user)) {
     return <div className="text-center mt-20">Access denied</div>;
   }

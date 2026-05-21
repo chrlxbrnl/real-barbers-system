@@ -30,10 +30,9 @@ export default function LandingPage() {
             backgroundPosition: "center",
           }}
         >
-          {/* Dark Gradient Overlay */}
+
           <div className="absolute inset-0 bg-gradient-to-b  from-black/70 via-black/60 to-black/80"></div>
 
-          {/* Hero Content */}
           <div className="relative z-10 text-white text-center px-6 max-w-2xl">
             <p className="text-base sm:text-lg md:text-xl mb-6 text-gray-300 max-w-lg mx-auto">
               Book appointments with skilled, professional barbers online.
@@ -44,7 +43,7 @@ export default function LandingPage() {
               meets real style
             </h2>
 
-            {/* CTA Button (Mobile + Desktop) */}
+            {/* CTA Button */}
             <button
               onClick={() => navigate("/home")}
               className="inline-block cursor-pointer bg-white text-black px-8 py-3 rounded-full font-semibold text-lg hover:scale-105 hover:bg-gray-200 transition duration-300"
@@ -56,7 +55,6 @@ export default function LandingPage() {
 
         {/* Face Shape Style Section */}
         <section className="min-h-screen px-6 py-16 md:px-16 flex flex-col md:flex-row items-center gap-6">
-          {/* Text Content */}
           <div className="flex-1 text-center md:text-left">
             <h2 className="text-3xl sm:text-4xl md:text-5xl font-semibold mb-6 leading-tight">
               Choose Your Face Shape, <br className="hidden sm:block" />
@@ -81,19 +79,15 @@ export default function LandingPage() {
         </section>
 
         <section className="relative min-h-screen bg-black overflow-hidden">
-          {/* Decorative Image */}
           <img
             src={scissors}
             alt="Scissors"
             className="absolute right-0 top-0 h-full object-contain opacity-60"
           />
 
-          {/* Overlay */}
           <div className="absolute inset-0 bg-black/70"></div>
 
-          {/* Content Wrapper */}
           <div className="relative z-10 flex flex-col justify-between min-h-screen px-6 py-16 md:px-16">
-            {/* Main Content */}
             <div className="max-w-xl text-white text-center md:text-left">
               <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-semibold mb-6 leading-tight">
                 Explore Our Haircut Styles

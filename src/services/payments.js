@@ -1,5 +1,4 @@
 const PAYMENT_API_BASE_URL = "https://real-barbers-paymongo-api-1yyi.vercel.app/api";
-// const PAYMENT_API_BASE_URL = "/api";
 const PAYMENT_REQUEST_TIMEOUT_MS = 20000;
 
 async function fetchWithTimeout(path, options = {}) {

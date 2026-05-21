@@ -39,7 +39,6 @@ export default function HaircutManagement() {
     [firestoreStyles],
   );
 
-  // Reset to first page when styles change
   useEffect(() => {
     setCurrentPage(1);
   }, [styles]);
@@ -381,7 +380,6 @@ export default function HaircutManagement() {
                   </tbody>
                 </table>
 
-                {/* Pagination Controls */}
                 <div className="px-6 py-4 border-t border-gray-200 flex items-center justify-between">
                   <div className="text-sm text-gray-600">
                     Showing {startIndex + 1} to {Math.min(startIndex + ITEMS_PER_PAGE, styles.length)} of {styles.length} haircuts

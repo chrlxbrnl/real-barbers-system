@@ -13,10 +13,8 @@ export function AuthProvider({ children }) {
       if (u) {
         await u.reload();
 
-        // ensure user doc exists
         await createUserIfNotExists(u);
 
-        // get profile (with role)
         const profile = await getUserProfile(u);
         const role = profile?.role || "user";
 

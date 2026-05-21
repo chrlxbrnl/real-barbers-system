@@ -75,7 +75,6 @@ function getDaysInMonth(year, month) {
 }
 
 function getFirstDayOfMonth(year, month) {
-  // 0=Sun,1=Mon,...6=Sat — convert to Mon-first (0=Mon)
   const day = new Date(year, month, 1).getDay();
   return (day + 6) % 7;
 }
@@ -114,7 +113,6 @@ export default function BookingPage() {
       where("date", "==", selectedFullDate),
     );
 
-    // Real-time listener for booked slots
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const times = snapshot.docs
         .map((doc) => doc.data())
@@ -305,7 +303,6 @@ export default function BookingPage() {
     return d < t;
   };
 
-  // Build calendar grid cells
   const totalCells = Math.ceil((firstDay + daysInMonth) / 7) * 7;
   const cells = Array.from({ length: totalCells }, (_, i) => {
     const dayNum = i - firstDay + 1;
@@ -359,7 +356,6 @@ export default function BookingPage() {
   if (user === undefined) {
     return (
       <div className="bg-[#f9f9f9] min-h-screen">
-        {/* Skeleton NavBar */}
         <nav className="bg-white shadow-sm border-b border-gray-200 animate-pulse">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
             <div className="flex items-center justify-between">
@@ -481,7 +477,7 @@ export default function BookingPage() {
             </div>
           </div>
 
-          {/* MIDDLE — Time Slots */}
+          {/* Time Slots */}
           <div className="lg:col-span-1">
             <div className="bg-white rounded-2xl shadow-md p-6 max-h-150 overflow-y-auto">
               <div className="grid grid-cols-2 gap-2">

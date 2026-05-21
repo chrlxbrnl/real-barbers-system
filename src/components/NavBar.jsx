@@ -217,7 +217,7 @@ export default function NavBar() {
           </button>
         </div>
 
-        {/* Mobile Slide Down Menu */}
+        {/* Mobile Menu */}
         <div
           className={`${isAdmin(user) ? "hidden max-[1179px]:block" : "md:hidden"} overflow-hidden transition-all duration-300 ease-in-out ${
             isOpen ? "max-h-80 opacity-100 pb-4" : "max-h-0 opacity-0"

@@ -9,7 +9,6 @@ import {
 import { useState, useEffect, useRef } from "react";
 import CreateProfile from "./CreateProfile";
 import { useNavigate } from "react-router-dom";
-// import { useAuth } from "../../context/AuthContext";
 
 const authIcons = [
   { name: "google", icon: googleIcon },
@@ -25,18 +24,6 @@ export default function AuthGate() {
   const [toastMessage, setToastMessage] = useState("");
   const toastTimeout = useRef(null);
   const navigate = useNavigate();
-  // const { user } = useAuth();
-
-  // // Redirect based on user role after login
-  // useEffect(() => {
-  //   if (user) {
-  //     if (user.role === "admin") {
-  //       navigate("/admin");
-  //     } else {
-  //       navigate("/account");
-  //     }
-  //   }
-  // }, [user, navigate]);
 
   const showToast = (message) => {
     setToastMessage(message);

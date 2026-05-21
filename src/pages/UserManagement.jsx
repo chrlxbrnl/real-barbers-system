@@ -95,7 +95,6 @@ export default function UserManagement() {
     });
   }, [accounts, searchTerm]);
 
-  // Reset to first page when filters change
   useEffect(() => {
     setCurrentPage(1);
   }, [searchTerm]);
@@ -501,7 +500,6 @@ export default function UserManagement() {
                   </tbody>
                 </table>
 
-                {/* Pagination Controls */}
                 <div className="px-6 py-4 border-t border-gray-200 flex items-center justify-between">
                   <div className="text-sm text-gray-600">
                     Showing {startIndex + 1} to {Math.min(startIndex + ITEMS_PER_PAGE, filteredAccounts.length)} of {filteredAccounts.length} customers
