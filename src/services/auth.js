@@ -12,6 +12,26 @@ import { auth, db } from "../firebase/firebase";
 const googleProvider = new GoogleAuthProvider();
 const facebookProvider = new FacebookAuthProvider();
 
+export function validatePassword(password) {
+  const requirements = {
+    hasUppercase: /[A-Z]/.test(password),
+    hasNumber: /[0-9]/.test(password),
+    hasSpecialChar: /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password),
+    isMinLength: password.length >= 8,
+  };
+
+  const isValid =
+    requirements.hasUppercase &&
+    requirements.hasNumber &&
+    requirements.hasSpecialChar &&
+    requirements.isMinLength;
+
+  return {
+    isValid,
+    ...requirements,
+  };
+}
+
 async function createUserDoc(user, extraData = {}) {
   const userRef = doc(db, "users", user.uid);
   const snap = await getDoc(userRef);
