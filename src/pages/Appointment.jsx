@@ -162,6 +162,8 @@ export default function Appointment() {
   const [reviewForm, setReviewForm] = useState({ rating: 5, comment: "" });
   const [paymentModal, setPaymentModal] = useState(null);
   const [paymentNotice, setPaymentNotice] = useState("");
+  const [appointmentToCancel, setAppointmentToCancel] = useState(null);
+  const [appointmentToDelete, setAppointmentToDelete] = useState(null);
   const paymentModalReservationExpiresAt = paymentModal?.reservationExpiresAt;
   const paymentModalSuccess = paymentModal?.success;
   const paymentModalWatchAppointmentId = paymentModal?.watchAppointmentId;
@@ -327,29 +329,36 @@ export default function Appointment() {
     };
   }, [appointments, historyFilter]);
 
-  const handleCancel = async (appointment) => {
-    const confirmCancel = window.confirm(
-      "Are you sure you want to cancel this appointment?",
-    );
+  const handleCancel = (appointment) => {
+    setAppointmentToCancel(appointment);
+  };
 
-    if (!confirmCancel) return;
+  const handleConfirmCancel = async () => {
+    if (!appointmentToCancel) return;
 
     try {
-      if (hasPendingQrPayment(appointment)) {
-        await cancelQrPayment(appointment.id);
+      if (hasPendingQrPayment(appointmentToCancel)) {
+        await cancelQrPayment(appointmentToCancel.id);
 
-        if (paymentModal?.watchAppointmentId === appointment.id) {
+        if (paymentModal?.watchAppointmentId === appointmentToCancel.id) {
           setPaymentModal(null);
         }
 
+        setAppointmentToCancel(null);
         return;
       }
 
-      await cancelAppointment(appointment.id);
+      await cancelAppointment(appointmentToCancel.id);
+      setAppointmentToCancel(null);
     } catch (err) {
       console.error(err);
       alert("Failed to cancel appointment");
+      setAppointmentToCancel(null);
     }
+  };
+
+  const handleDismissCancel = () => {
+    setAppointmentToCancel(null);
   };
 
   const handleReviewSubmit = async (appointmentId) => {
@@ -366,26 +375,33 @@ export default function Appointment() {
     }
   };
 
-  const handleDeleteHistory = async (appointment) => {
-    const confirmDelete = window.confirm(
-      "Are you sure you want to delete this appointment from your history?",
-    );
+  const handleDeleteHistory = (appointment) => {
+    setAppointmentToDelete(appointment);
+  };
 
-    if (!confirmDelete) return;
+  const handleConfirmDelete = async () => {
+    if (!appointmentToDelete) return;
 
     try {
-      await updateDoc(doc(db, "appointments", appointment.id), {
+      await updateDoc(doc(db, "appointments", appointmentToDelete.id), {
         hiddenFromUser: true,
         hiddenAt: new Date(),
       });
 
-      if (selectedAppointment?.id === appointment.id) {
+      if (selectedAppointment?.id === appointmentToDelete.id) {
         setSelectedAppointment(null);
       }
+
+      setAppointmentToDelete(null);
     } catch (err) {
       console.error(err);
       alert("Failed to delete appointment");
+      setAppointmentToDelete(null);
     }
+  };
+
+  const handleDismissDelete = () => {
+    setAppointmentToDelete(null);
   };
 
   const closePaymentModal = async () => {
@@ -544,7 +560,7 @@ export default function Appointment() {
           </div>
           <button
             onClick={() => navigate("/book")}
-            className="inline-flex items-center justify-center gap-2 rounded-md bg-black px-4 py-2 text-sm font-medium text-white hover:bg-gray-800 transition"
+            className="inline-flex items-center justify-center gap-2 rounded-md bg-black px-4 py-2 text-sm font-medium text-white hover:bg-gray-800 transition cursor-pointer"
           >
             <RotateCcw className="h-4 w-4" />
             Rebook
@@ -682,7 +698,7 @@ export default function Appointment() {
                       <>
                         <button
                           onClick={() => navigate("/book")}
-                          className="inline-flex items-center gap-2 rounded-md border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 transition hover:border-black hover:text-black"
+                          className="inline-flex items-center gap-2 rounded-md border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 transition hover:border-black hover:text-black cursor-pointer"
                         >
                           <RotateCcw className="h-4 w-4" />
                           Rebook
@@ -691,15 +707,16 @@ export default function Appointment() {
                     )}
                     <button
                       onClick={() => openDetails(appt)}
-                      className="inline-flex items-center gap-2 rounded-md bg-black px-3 py-2 text-sm font-medium text-white transition hover:bg-gray-800"
+                      className="inline-flex items-center gap-2 rounded-md bg-black px-3 py-2 text-sm font-medium text-white transition hover:bg-gray-800 cursor-pointer"
                     >
                       <FileText className="h-4 w-4" />
                       Details
                     </button>
-                    {getPaymentLabel(appt.paymentStatus) !== "Paid" && (
+                    {(activeTab === "history" ||
+                      getPaymentLabel(appt.paymentStatus) !== "Paid") && (
                       <button
                         onClick={() => handleDeleteHistory(appt)}
-                        className="inline-flex items-center gap-2 rounded-md border border-red-500 px-3 py-2 text-sm font-medium text-red-600 transition hover:bg-red-500 hover:text-white"
+                        className="inline-flex items-center gap-2 rounded-md border border-red-500 px-3 py-2 text-sm font-medium text-red-600 transition hover:bg-red-500 hover:text-white cursor-pointer"
                       >
                         <Trash2 className="h-4 w-4" />
                         Delete
@@ -727,7 +744,7 @@ export default function Appointment() {
               </div>
               <button
                 onClick={() => setSelectedAppointment(null)}
-                className="rounded-md px-2 py-1 text-sm text-gray-500 hover:bg-gray-100"
+                className="rounded-md px-2 py-1 text-sm text-gray-500 hover:bg-gray-100 cursor-pointer"
               >
                 Close
               </button>
@@ -942,6 +959,70 @@ export default function Appointment() {
                 </button>
               </>
             )}
+          </div>
+        </div>
+      )}
+
+      {appointmentToCancel && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
+          <div className="w-full max-w-md rounded-lg bg-white p-6 shadow-xl">
+            <h2 className="text-lg font-semibold text-gray-900">
+              Cancel Appointment
+            </h2>
+            <p className="mt-3 text-sm text-gray-600">
+              Are you sure you want to cancel your appointment on{" "}
+              <span className="font-medium">
+                {appointmentToCancel.date} at {appointmentToCancel.time}
+              </span>
+              ? This action cannot be undone.
+            </p>
+
+            <div className="mt-6 flex gap-3">
+              <button
+                onClick={handleDismissCancel}
+                className="flex-1 rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition hover:border-black hover:text-black cursor-pointer"
+              >
+                Keep Appointment
+              </button>
+              <button
+                onClick={handleConfirmCancel}
+                className="flex-1 rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-red-700 cursor-pointer"
+              >
+                Cancel Appointment
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {appointmentToDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
+          <div className="w-full max-w-md rounded-lg bg-white p-6 shadow-xl">
+            <h2 className="text-lg font-semibold text-gray-900">
+              Delete Appointment
+            </h2>
+            <p className="mt-3 text-sm text-gray-600">
+              Are you sure you want to delete your appointment on{" "}
+              <span className="font-medium">
+                {appointmentToDelete.date} at {appointmentToDelete.time}
+              </span>
+              ? This will remove it from your history permanently.
+            </p>
+
+            <div className="mt-6 flex gap-3">
+              <button
+                onClick={handleDismissDelete}
+                className="flex-1 rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition hover:border-black hover:text-black cursor-pointer"
+              >
+                Keep Appointment
+              </button>
+              <button
+                onClick={handleConfirmDelete}
+                className="flex-1 rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-red-700 cursor-pointer"
+              >
+                Delete Appointment
+              </button>
+            </div>
           </div>
         </div>
       )}
