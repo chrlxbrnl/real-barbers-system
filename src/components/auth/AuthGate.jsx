@@ -6,7 +6,7 @@ import {
   signInWithFacebook,
   loginWithEmail,
 } from "../../services/auth";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import CreateProfile from "./CreateProfile";
 import { useNavigate } from "react-router-dom";
 // import { useAuth } from "../../context/AuthContext";
@@ -22,6 +22,8 @@ export default function AuthGate() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [toastMessage, setToastMessage] = useState("");
+  const toastTimeout = useRef(null);
   const navigate = useNavigate();
   // const { user } = useAuth();
 
@@ -35,6 +37,26 @@ export default function AuthGate() {
   //     }
   //   }
   // }, [user, navigate]);
+
+  const showToast = (message) => {
+    setToastMessage(message);
+
+    if (toastTimeout.current) {
+      clearTimeout(toastTimeout.current);
+    }
+
+    toastTimeout.current = setTimeout(() => {
+      setToastMessage("");
+    }, 4000);
+  };
+
+  useEffect(() => {
+    return () => {
+      if (toastTimeout.current) {
+        clearTimeout(toastTimeout.current);
+      }
+    };
+  }, []);
 
   const handleAuthClick = async (providerName) => {
     try {
@@ -60,6 +82,23 @@ export default function AuthGate() {
       await loginWithEmail(email, password);
     } catch (error) {
       console.error("Email login error:", error);
+      const invalidCredentials =
+        error.code === "auth/wrong-password" ||
+        error.code === "auth/user-not-found" ||
+        error.code === "auth/invalid-email";
+
+      if (invalidCredentials) {
+        const message =
+          error.code === "auth/user-not-found"
+            ? "No account found with that email."
+            : error.code === "auth/wrong-password"
+            ? "Incorrect password. Please try again."
+            : "Please enter a valid email address.";
+
+        showToast(message);
+      } else {
+        showToast("Invalid email or password. Please try again.");
+      }
     } finally {
       setLoading(false);
     }
@@ -103,6 +142,14 @@ export default function AuthGate() {
             Create profile
           </button>
         </>
+      )}
+
+      {toastMessage && (
+        <div className="fixed bottom-6 left-1/2 z-50 w-full max-w-sm -translate-x-1/2 px-4">
+          <div className="rounded-2xl bg-red-600 px-4 py-3 text-sm font-medium text-white shadow-lg shadow-black/20">
+            {toastMessage}
+          </div>
+        </div>
       )}
 
       {mode === "login" && (
