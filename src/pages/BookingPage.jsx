@@ -531,12 +531,9 @@ export default function BookingPage() {
           </div>
 
           {/* RIGHT — Shop Details */}
-          <div className="lg:col-span-1 space-y-4">
-            <ShopDetailsCard showBookButton={false} />
-
-            {/* Confirm button */}
+          <div className="lg:col-span-1 flex flex-col gap-4">
             {selectedDate && selectedTime && (
-              <div className="bg-white rounded-3xl shadow-md p-6 text-center border border-gray-200">
+              <div className="order-1 lg:order-2 bg-white rounded-3xl shadow-md p-6 text-center border border-gray-200">
                 <h2 className="text-lg font-semibold mb-4">
                   Appointment summary
                 </h2>
@@ -739,6 +736,10 @@ export default function BookingPage() {
                 )}
               </div>
             )}
+
+            <div className="order-2 lg:order-1">
+              <ShopDetailsCard showBookButton={false} />
+            </div>
           </div>
         </div>
       </main>
