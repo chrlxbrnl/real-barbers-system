@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Menu, LogOut } from "lucide-react";
 import Logo from "./Logo";
 import { Link, useLocation, useNavigate } from "react-router-dom";
@@ -11,6 +11,35 @@ export default function NavBar() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const dropdownRef = useRef(null);
+
+  useEffect(() => {
+    if (!isUserMenuOpen) return;
+
+    const handleClickOutside = (event) => {
+      if (!dropdownRef.current?.contains(event.target)) {
+        setIsUserMenuOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [isUserMenuOpen]);
+
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth >= 768) {
+        setIsOpen(false);
+      }
+      if (window.innerWidth < 768) {
+        setIsUserMenuOpen(false);
+      }
+    };
+
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   const handleSectionNavigation = (sectionId) => {
     setIsOpen(false);
@@ -37,12 +66,14 @@ export default function NavBar() {
     <header className="bg-white border-b border-gray-200">
       <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center py-3">
-          <Logo />
+          <Link to="/" className="flex items-center" onClick={() => setIsOpen(false)}>
+            <Logo />
+          </Link>
 
           {isAdmin(user) ? (
             // Admin Navigation
             <div className="flex items-center gap-6">
-              <ul className="hidden md:flex gap-6 text-sm font-medium text-gray-800">
+              <ul className="hidden min-[1180px]:flex gap-6 text-sm font-medium text-gray-800">
                 <li>
                   <Link to="/admin">Dashboard</Link>
                 </li>
@@ -59,10 +90,10 @@ export default function NavBar() {
 
               {/* User Account Dropdown */}
               {user && (
-                <div className="relative">
+                <div ref={dropdownRef} className="relative">
                   <button
                     onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
-                    className="hidden md:flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg"
+                    className="hidden min-[1180px]:flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg"
                   >
                     <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white text-xs font-semibold">
                       {getFirstName()?.[0]?.toUpperCase()}
@@ -89,7 +120,7 @@ export default function NavBar() {
                           navigate("/home");
                           setIsUserMenuOpen(false);
                         }}
-                        className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
+                        className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2 cursor-pointer"
                       >
                         <LogOut className="h-4 w-4" />
                         Logout
@@ -136,7 +167,7 @@ export default function NavBar() {
 
               {/* User Account Dropdown */}
               {user && (
-                <div className="relative">
+                <div ref={dropdownRef} className="relative">
                   <button
                     onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
                     className="hidden md:flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg"
@@ -163,10 +194,10 @@ export default function NavBar() {
                       <button
                         onClick={() => {
                           logout();
-                          navigate("/home");
+                          navigate("/");
                           setIsUserMenuOpen(false);
                         }}
-                        className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
+                        className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2 cursor-pointer"
                       >
                         <LogOut className="h-4 w-4" />
                         Logout
@@ -179,7 +210,7 @@ export default function NavBar() {
           )}
 
           <button
-            className="md:hidden cursor-pointer"
+            className={`${isAdmin(user) ? "hidden max-[1179px]:block" : "md:hidden"} cursor-pointer`}
             onClick={() => setIsOpen(!isOpen)}
           >
             <Menu />
@@ -188,7 +219,7 @@ export default function NavBar() {
 
         {/* Mobile Slide Down Menu */}
         <div
-          className={`md:hidden overflow-hidden transition-all duration-300 ease-in-out ${
+          className={`${isAdmin(user) ? "hidden max-[1179px]:block" : "md:hidden"} overflow-hidden transition-all duration-300 ease-in-out ${
             isOpen ? "max-h-80 opacity-100 pb-4" : "max-h-0 opacity-0"
           }`}
         >
@@ -243,7 +274,7 @@ export default function NavBar() {
                   <button
                     onClick={() => {
                       logout();
-                      navigate("/home");
+                      navigate("/");
                       setIsOpen(false);
                     }}
                     className="w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded flex items-center gap-2"
@@ -270,6 +301,7 @@ export default function NavBar() {
                 <Link
                   to="/appointment"
                   className="block rounded px-3 py-2 hover:bg-gray-100"
+                  onClick={() => setIsOpen(false)}
                 >
                   View Appointment
                 </Link>
@@ -315,7 +347,7 @@ export default function NavBar() {
                   <button
                     onClick={() => {
                       logout();
-                      navigate("/home");
+                      navigate("/");
                       setIsOpen(false);
                     }}
                     className="w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded flex items-center gap-2"
