@@ -55,6 +55,8 @@ export default function Reviews() {
   const [reviewForm, setReviewForm] = useState({ rating: 5, comment: "" });
   const [saving, setSaving] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const reviewsPerPage = 5;
 
   useEffect(() => {
     const unsubscribe = subscribeReviews(
@@ -71,6 +73,19 @@ export default function Reviews() {
 
   const displayedReviews = reviews.length ? reviews : sampleReviews;
   const reviewCount = displayedReviews.length;
+  const totalPages = Math.max(1, Math.ceil(reviewCount / reviewsPerPage));
+  const currentPageIndex = Math.min(currentPage, totalPages) - 1;
+  const pageReviews = displayedReviews.slice(
+    currentPageIndex * reviewsPerPage,
+    currentPageIndex * reviewsPerPage + reviewsPerPage,
+  );
+
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages);
+    }
+  }, [currentPage, totalPages]);
+
   const averageRating = reviewCount
     ? displayedReviews.reduce((sum, review) => sum + (review.rating || 0), 0) / reviewCount
     : 4.9;
@@ -198,7 +213,7 @@ export default function Reviews() {
       )}
 
       <div className="space-y-6">
-        {displayedReviews.map((review) => (
+        {pageReviews.map((review) => (
           <div
             key={review.id}
             className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm"
@@ -220,6 +235,44 @@ export default function Reviews() {
           </div>
         ))}
       </div>
+
+      {totalPages > 1 && (
+        <div className="flex flex-wrap items-center justify-center gap-2 rounded-full bg-white px-4 py-3 shadow-sm">
+          <button
+            type="button"
+            onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
+            disabled={currentPage === 1}
+            className="rounded-full border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-600 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
+          >
+            Previous
+          </button>
+          {Array.from({ length: totalPages }).map((_, index) => {
+            const pageNumber = index + 1;
+            return (
+              <button
+                key={pageNumber}
+                type="button"
+                onClick={() => setCurrentPage(pageNumber)}
+                className={`rounded-full px-3 py-2 text-sm font-medium transition ${
+                  pageNumber === currentPage
+                    ? "bg-black text-white"
+                    : "border border-gray-200 bg-white text-gray-600 hover:bg-gray-50 cursor-pointer"
+                }`}
+              >
+                {pageNumber}
+              </button>
+            );
+          })}
+          <button
+            type="button"
+            onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}
+            disabled={currentPage === totalPages}
+            className="rounded-full border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-600 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
+          >
+            Next
+          </button>
+        </div>
+      )}
     </div>
   );
 }
