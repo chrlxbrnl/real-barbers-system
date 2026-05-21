@@ -184,7 +184,7 @@ export default function Account() {
               <button
                 onClick={handleSave}
                 disabled={saving}
-                className="bg-black text-white px-4 py-2 rounded-full text-sm hover:bg-gray-800 disabled:bg-gray-400"
+                className="hidden md:inline-block bg-black text-white px-4 py-2 rounded-full text-sm hover:bg-gray-800 disabled:bg-gray-400"
               >
                 {saving ? "Saving..." : "Save Changes"}
               </button>
@@ -215,7 +215,14 @@ export default function Account() {
           </div>
 
           {/* Logout bottom right */}
-          <div className="flex justify-end mt-6">
+          <div className="flex justify-end gap-4 mt-6">
+            <button
+              onClick={handleSave}
+              disabled={saving}
+              className="md:hidden bg-black text-white px-4 py-2 rounded-full text-sm hover:bg-gray-800 disabled:bg-gray-400"
+            >
+              {saving ? "Saving..." : "Save Changes"}
+            </button>
             <button
               onClick={() => {
                 logout();
