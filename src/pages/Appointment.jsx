@@ -944,10 +944,6 @@ export default function Appointment() {
                     <p className="mt-3 text-xs text-gray-500">
                       Waiting for payment confirmation...
                     </p>
-                    <p className="mt-1 text-xs text-gray-400">
-                      QR expires in 30 minutes, but this slot is only held until
-                      the countdown ends.
-                    </p>
                   </>
                 )}
 
