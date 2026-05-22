@@ -715,11 +715,6 @@ export default function BookingPage() {
                               <p className="text-xs text-gray-500 mt-3">
                                 Waiting for payment confirmation...
                               </p>
-
-                              <p className="text-xs text-gray-400 mt-1">
-                                QR expires in 30 minutes, but this slot is only
-                                held until the countdown ends.
-                              </p>
                             </>
                           )}
 
