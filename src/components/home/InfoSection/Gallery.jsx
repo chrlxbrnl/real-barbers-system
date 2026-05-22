@@ -9,6 +9,16 @@ import g6 from "../../../assets/images/Gallery/g6.jpg";
 export default function Gallery() {
   const [activeImage, setActiveImage] = useState(null);
 
+  const openImage = (image) => {
+    setActiveImage(image);
+    window.dispatchEvent(new Event("gallery-modal-open"));
+  };
+
+  const closeImage = () => {
+    setActiveImage(null);
+    window.dispatchEvent(new Event("gallery-modal-close"));
+  };
+
   const images = [
     { src: g1, alt: "Barber gallery image 1" },
     { src: g2, alt: "Barber gallery image 2" },
@@ -27,7 +37,7 @@ export default function Gallery() {
           <button
             key={index}
             type="button"
-            onClick={() => setActiveImage(image)}
+            onClick={() => openImage(image)}
             className="h-32 sm:h-40 rounded overflow-hidden focus:outline-none focus:ring-2 focus:ring-primary cursor-pointer"
           >
             <img
@@ -42,7 +52,7 @@ export default function Gallery() {
       {activeImage && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4"
-          onClick={() => setActiveImage(null)}
+          onClick={closeImage}
         >
           <div
             className="max-h-full max-w-full overflow-hidden rounded-md"
@@ -50,7 +60,7 @@ export default function Gallery() {
           >
             <button
               type="button"
-              onClick={() => setActiveImage(null)}
+              onClick={closeImage}
               className="absolute right-4 top-4 z-10 rounded-full bg-black/60 px-3 py-1 text-sm text-white cursor-pointer"
             >
               Close

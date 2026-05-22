@@ -9,10 +9,44 @@ import { isAdmin } from "../utils/isAdmin";
 export default function NavBar() {
   const [isOpen, setIsOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const [isNavVisible, setIsNavVisible] = useState(true);
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const dropdownRef = useRef(null);
+  const lastScrollY = useRef(0);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
+
+      if (currentScrollY <= 0) {
+        setIsNavVisible(true);
+      } else if (currentScrollY > lastScrollY.current && currentScrollY > 50) {
+        setIsNavVisible(false);
+      } else if (currentScrollY < lastScrollY.current) {
+        setIsNavVisible(true);
+      }
+
+      lastScrollY.current = currentScrollY;
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  useEffect(() => {
+    const hideNavOnGalleryOpen = () => setIsNavVisible(false);
+    const showNavOnGalleryClose = () => setIsNavVisible(true);
+
+    window.addEventListener("gallery-modal-open", hideNavOnGalleryOpen);
+    window.addEventListener("gallery-modal-close", showNavOnGalleryClose);
+
+    return () => {
+      window.removeEventListener("gallery-modal-open", hideNavOnGalleryOpen);
+      window.removeEventListener("gallery-modal-close", showNavOnGalleryClose);
+    };
+  }, []);
 
   useEffect(() => {
     if (!isUserMenuOpen) return;
@@ -65,7 +99,7 @@ export default function NavBar() {
   };
 
   return (
-    <header className="sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
+    <header className={`sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm transform transition-transform duration-300 ${isNavVisible ? "translate-y-0" : "-translate-y-full"}`}>
       <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center py-3">
           <Link
